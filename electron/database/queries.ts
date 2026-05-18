@@ -2,6 +2,7 @@ import type Database from "better-sqlite3";
 import type {
   Campaign,
   CampaignEmail,
+  CampaignFilters,
   Client,
   ClientType,
   ClientTypeWithUsage,
@@ -11,6 +12,7 @@ import type {
   CreateClientType,
   EmailAccount,
   PaginatedResult,
+  RecipientSummary,
   Staff,
   StaffFilters,
   Template,
@@ -877,6 +879,107 @@ export function updateCampaignEmail(
 export function deleteCampaign(id: number) {
   const db = getDb();
   db.prepare("DELETE FROM campaigns WHERE id = ?").run(id);
+}
+
+// -------------------- CAMPAIGN FILTERS --------------------
+
+export function getCampaignFilters(campaignId: number): CampaignFilters {
+  const db = getDb();
+  const rows = db
+    .prepare(
+      "SELECT filter_type, filter_value FROM campaign_filters WHERE campaign_id = ?"
+    )
+    .all(campaignId) as Array<{ filter_type: string; filter_value: string }>;
+  const clientTypeIds: number[] = [];
+  const areas: string[] = [];
+  for (const r of rows) {
+    if (r.filter_type === "client_type") {
+      const n = Number(r.filter_value);
+      if (Number.isFinite(n)) clientTypeIds.push(n);
+    } else if (r.filter_type === "area") {
+      areas.push(r.filter_value);
+    }
+  }
+  return { clientTypeIds, areas };
+}
+
+export function setCampaignFilters(
+  campaignId: number,
+  filters: CampaignFilters
+) {
+  const db = getDb();
+  const txn = db.transaction(() => {
+    db.prepare("DELETE FROM campaign_filters WHERE campaign_id = ?").run(
+      campaignId
+    );
+    const ins = db.prepare(
+      "INSERT INTO campaign_filters (campaign_id, filter_type, filter_value) VALUES (?, ?, ?)"
+    );
+    for (const id of filters.clientTypeIds) {
+      ins.run(campaignId, "client_type", String(id));
+    }
+    for (const area of filters.areas) {
+      ins.run(campaignId, "area", area);
+    }
+  });
+  txn();
+}
+
+// Resolves a filter spec to the set of contacts that would receive a
+// campaign. Used for live recipient counts in the editor and (at send
+// time, in commit 8) for recurring campaigns that materialise recipients
+// at each run.
+//
+// Semantics: AND across filter dimensions, OR within each dimension.
+//   - clientTypeIds = [a,b]  → contact has ANY of those types
+//   - areas = ["Kent","Surrey"] → contact.area in that list
+//   - both present → contact must satisfy both
+//   - both empty → matches all active contacts
+export function resolveRecipientsForFilters(
+  filters: CampaignFilters
+): RecipientSummary[] {
+  const db = getDb();
+  const where: string[] = ["co.is_active = 1", "co.email != ''"];
+  const params: any[] = [];
+
+  if (filters.clientTypeIds.length > 0) {
+    const placeholders = filters.clientTypeIds.map(() => "?").join(",");
+    where.push(`co.id IN (
+      SELECT cct.contact_id FROM contact_client_types cct
+      WHERE cct.client_type_id IN (${placeholders})
+    )`);
+    params.push(...filters.clientTypeIds);
+  }
+
+  if (filters.areas.length > 0) {
+    const placeholders = filters.areas.map(() => "?").join(",");
+    where.push(`co.area IN (${placeholders})`);
+    params.push(...filters.areas);
+  }
+
+  const rows = db
+    .prepare(
+      `SELECT co.id, co.name, co.email, co.area, cl.name AS client_name
+       FROM contacts co
+       LEFT JOIN clients cl ON cl.id = co.client_id
+       WHERE ${where.join(" AND ")}
+       ORDER BY co.name COLLATE NOCASE ASC`
+    )
+    .all(...params) as Array<{
+    id: number;
+    name: string;
+    email: string;
+    area: string | null;
+    client_name: string | null;
+  }>;
+
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    email: r.email,
+    area: r.area,
+    client_name: r.client_name,
+  }));
 }
 
 // -------------------- EMAIL ACCOUNTS --------------------

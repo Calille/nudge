@@ -147,6 +147,19 @@ export interface CreateCampaign {
   scheduled_at?: string | null;
 }
 
+export interface CampaignFilters {
+  clientTypeIds: number[];
+  areas: string[];
+}
+
+export interface RecipientSummary {
+  id: number;
+  name: string;
+  email: string;
+  client_name: string | null;
+  area: string | null;
+}
+
 export interface EmailAccount {
   id: number;
   provider: "gmail" | "outlook" | "smtp";

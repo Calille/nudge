@@ -17,8 +17,9 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { useTemplateStore } from "@/stores/templateStore";
 import { useCampaignStore } from "@/stores/campaignStore";
 import { toast } from "@/stores/uiStore";
-import type { Contact, Template } from "@/types";
+import type { CampaignFilters, Contact, RecipientSummary, Template } from "@/types";
 import { cn } from "@/lib/cn";
+import { RecipientFilterBar } from "./RecipientFilterBar";
 
 interface Props {
   open: boolean;
@@ -33,6 +34,11 @@ export function CampaignBuilder({ open, onClose }: Props) {
   const [templateId, setTemplateId] = useState<number | null>(null);
   const [name, setName] = useState("");
   const [sending, setSending] = useState(false);
+  const [filters, setFilters] = useState<CampaignFilters>({
+    clientTypeIds: [],
+    areas: [],
+  });
+  const [matching, setMatching] = useState<RecipientSummary[]>([]);
   const templates = useTemplateStore((s) => s.templates);
   const reloadCampaigns = useCampaignStore((s) => s.load);
 
@@ -43,6 +49,8 @@ export function CampaignBuilder({ open, onClose }: Props) {
       setTemplateId(null);
       setName("");
       setSearch("");
+      setFilters({ clientTypeIds: [], areas: [] });
+      setMatching([]);
       return;
     }
     (async () => {
@@ -51,16 +59,37 @@ export function CampaignBuilder({ open, onClose }: Props) {
     })();
   }, [open]);
 
+  // Resolve filter spec to a recipient set whenever filters change.
+  useEffect(() => {
+    if (!open) return;
+    if (filters.clientTypeIds.length === 0 && filters.areas.length === 0) {
+      setMatching([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const rows = await window.api.campaigns.resolveRecipients(filters);
+        if (!cancelled) setMatching(rows);
+      } catch (err) {
+        console.error("[campaign] resolveRecipients failed", err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [filters, open]);
+
   const filtered = useMemo(() => {
-    if (!search.trim()) return contacts;
+    if (!search.trim()) return visibleContacts;
     const q = search.toLowerCase();
-    return contacts.filter(
+    return visibleContacts.filter(
       (c) =>
         c.name.toLowerCase().includes(q) ||
         c.email.toLowerCase().includes(q) ||
         (c.client_name ?? "").toLowerCase().includes(q)
     );
-  }, [contacts, search]);
+  }, [visibleContacts, search]);
 
   const toggleContact = (id: number) => {
     const next = new Set(selected);
@@ -71,6 +100,9 @@ export function CampaignBuilder({ open, onClose }: Props) {
 
   const template = templates.find((t) => t.id === templateId) ?? null;
 
+  const hasFilters =
+    filters.clientTypeIds.length > 0 || filters.areas.length > 0;
+
   const startSend = async (mode: "now" | "draft") => {
     if (!templateId || selected.size === 0) return;
     setSending(true);
@@ -80,6 +112,11 @@ export function CampaignBuilder({ open, onClose }: Props) {
         template_id: templateId,
         contact_ids: Array.from(selected),
       });
+      // Persist filters alongside the campaign so the editor and the
+      // (forthcoming) scheduler can re-resolve them later.
+      if (hasFilters) {
+        await window.api.campaigns.setFilters(campaign.id, filters);
+      }
       if (mode === "now") {
         await window.api.campaigns.send(campaign.id);
         toast({ title: "Campaign started", tone: "success" });
@@ -94,6 +131,25 @@ export function CampaignBuilder({ open, onClose }: Props) {
       setSending(false);
     }
   };
+
+  // Visible contact set is either the filter-resolved list or all contacts.
+  const visibleContacts = hasFilters
+    ? matching.map<Contact>((m) => ({
+        id: m.id,
+        client_id: null,
+        client_name: m.client_name ?? undefined,
+        name: m.name,
+        email: m.email,
+        role: null,
+        phone: null,
+        notes: null,
+        area: m.area,
+        tags: [],
+        is_active: 1,
+        created_at: "",
+        updated_at: "",
+      }))
+    : contacts;
 
   return (
     <Modal
@@ -154,6 +210,11 @@ export function CampaignBuilder({ open, onClose }: Props) {
 
       {step === 1 && (
         <div className="mt-5 flex flex-col gap-3 h-[60vh]">
+          <RecipientFilterBar
+            value={filters}
+            onChange={setFilters}
+            matchCount={hasFilters ? matching.length : undefined}
+          />
           <div className="flex items-center gap-3">
             <SearchInput
               value={search}

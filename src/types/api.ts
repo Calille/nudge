@@ -1,5 +1,6 @@
 import type {
   Campaign,
+  CampaignFilters,
   CampaignWithEmails,
   Client,
   ClientType,
@@ -17,6 +18,7 @@ import type {
   FileFilter,
   ImportResult,
   PaginatedResult,
+  RecipientSummary,
   SendProgressEvent,
   SenderDefaults,
   Staff,
@@ -104,6 +106,9 @@ export interface NudgeMailAPI {
     clone(campaignId: number): Promise<Campaign>;
     delete(campaignId: number): Promise<void>;
     onProgress(callback: (progress: SendProgressEvent) => void): () => void;
+    setFilters(campaignId: number, filters: CampaignFilters): Promise<void>;
+    getFilters(campaignId: number): Promise<CampaignFilters>;
+    resolveRecipients(filters: CampaignFilters): Promise<RecipientSummary[]>;
   };
 
   settings: {

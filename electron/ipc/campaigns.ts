@@ -3,8 +3,11 @@ import {
   deleteCampaign,
   getCampaign,
   getCampaignEmails,
+  getCampaignFilters,
   getTemplateById,
   listCampaigns,
+  resolveRecipientsForFilters,
+  setCampaignFilters,
   updateCampaignStatus,
 } from "../database/queries";
 import { registerHandler } from "./helpers";
@@ -14,7 +17,7 @@ import {
   resumeCampaign,
   runCampaign,
 } from "../services/campaign-runner";
-import type { CreateCampaign } from "../../src/types";
+import type { CampaignFilters, CreateCampaign } from "../../src/types";
 
 export function registerCampaignHandlers() {
   registerHandler("campaigns:list", async () => listCampaigns());
@@ -85,5 +88,26 @@ export function registerCampaignHandlers() {
 
   registerHandler("campaigns:delete", async (_e, id: number) =>
     deleteCampaign(id)
+  );
+
+  registerHandler(
+    "campaigns:setFilters",
+    async (_e, campaignId: number, filters: CampaignFilters) =>
+      setCampaignFilters(campaignId, filters)
+  );
+
+  registerHandler(
+    "campaigns:getFilters",
+    async (_e, campaignId: number) => getCampaignFilters(campaignId)
+  );
+
+  // Live resolution of a filter spec to recipients — used by the editor
+  // for the running recipient count and (later) by the scheduler at send
+  // time for recurring campaigns. Accepts unsaved filters so the UI can
+  // preview before persisting.
+  registerHandler(
+    "campaigns:resolveRecipients",
+    async (_e, filters: CampaignFilters) =>
+      resolveRecipientsForFilters(filters)
   );
 }

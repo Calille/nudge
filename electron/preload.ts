@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from "electron";
 import type {
   Campaign,
+  CampaignFilters,
   CampaignWithEmails,
   Client,
   ClientType,
@@ -18,6 +19,7 @@ import type {
   FileFilter,
   ImportResult,
   PaginatedResult,
+  RecipientSummary,
   SenderDefaults,
   SendProgressEvent,
   Staff,
@@ -152,6 +154,12 @@ const api = {
       ipcRenderer.on("campaigns:progress", listener);
       return () => ipcRenderer.removeListener("campaigns:progress", listener);
     },
+    setFilters: (campaignId: number, filters: CampaignFilters) =>
+      invoke<void>("campaigns:setFilters", campaignId, filters),
+    getFilters: (campaignId: number) =>
+      invoke<CampaignFilters>("campaigns:getFilters", campaignId),
+    resolveRecipients: (filters: CampaignFilters) =>
+      invoke<RecipientSummary[]>("campaigns:resolveRecipients", filters),
   },
   settings: {
     connectGmail: () => invoke<EmailAccount>("settings:connect-gmail"),
