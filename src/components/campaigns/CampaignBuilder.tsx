@@ -91,6 +91,29 @@ export function CampaignBuilder({ open, onClose }: Props) {
     };
   }, [filters, open]);
 
+  const hasFilters =
+    filters.clientTypeIds.length > 0 || filters.areas.length > 0;
+
+  // Visible contact set is either the filter-resolved list or all contacts.
+  // Declared before `filtered` because the useMemo below reads it.
+  const visibleContacts: Contact[] = hasFilters
+    ? matching.map((m) => ({
+        id: m.id,
+        client_id: null,
+        client_name: m.client_name ?? undefined,
+        name: m.name,
+        email: m.email,
+        role: null,
+        phone: null,
+        notes: null,
+        area: m.area,
+        tags: [],
+        is_active: 1,
+        created_at: "",
+        updated_at: "",
+      }))
+    : contacts;
+
   const filtered = useMemo(() => {
     if (!search.trim()) return visibleContacts;
     const q = search.toLowerCase();
@@ -110,9 +133,6 @@ export function CampaignBuilder({ open, onClose }: Props) {
   };
 
   const template = templates.find((t) => t.id === templateId) ?? null;
-
-  const hasFilters =
-    filters.clientTypeIds.length > 0 || filters.areas.length > 0;
 
   const startSend = async (mode: "submit" | "draft") => {
     if (!templateId || selected.size === 0) return;
@@ -159,25 +179,6 @@ export function CampaignBuilder({ open, onClose }: Props) {
       setSending(false);
     }
   };
-
-  // Visible contact set is either the filter-resolved list or all contacts.
-  const visibleContacts = hasFilters
-    ? matching.map<Contact>((m) => ({
-        id: m.id,
-        client_id: null,
-        client_name: m.client_name ?? undefined,
-        name: m.name,
-        email: m.email,
-        role: null,
-        phone: null,
-        notes: null,
-        area: m.area,
-        tags: [],
-        is_active: 1,
-        created_at: "",
-        updated_at: "",
-      }))
-    : contacts;
 
   return (
     <Modal
