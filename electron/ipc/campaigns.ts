@@ -6,6 +6,8 @@ import {
   getCampaign,
   getCampaignEmails,
   getCampaignFilters,
+  getContactById,
+  getDefaultEmailAccountFull,
   getTemplateById,
   listCampaigns,
   resolveRecipientsForFilters,
@@ -19,10 +21,14 @@ import {
   runCampaign,
 } from "../services/campaign-runner";
 import { computeNextRunAt, validateSchedule } from "../utils/schedule";
+import { getSenderDefaults } from "../services/sender-defaults";
+import { renderTemplateForContact } from "../services/template-compiler";
 import type {
   CampaignFilters,
+  CampaignPreview,
   CampaignSchedule,
   CreateCampaign,
+  RecipientSummary,
 } from "../../src/types";
 
 export function registerCampaignHandlers() {
@@ -122,5 +128,86 @@ export function registerCampaignHandlers() {
     "campaigns:resolveRecipients",
     async (_e, filters: CampaignFilters) =>
       resolveRecipientsForFilters(filters)
+  );
+
+  // Renders the campaign's template with merge fields filled in for a
+  // sample recipient. If sampleContactId is omitted, picks the first
+  // matching recipient — filter-resolved for recurring campaigns, or the
+  // first contact_id from campaign_emails for one-off ones.
+  registerHandler(
+    "campaigns:preview",
+    async (
+      _e,
+      campaignId: number,
+      sampleContactId?: number | null
+    ): Promise<CampaignPreview> => {
+      const campaign = getCampaign(campaignId);
+      if (!campaign.template_id) {
+        throw new Error("Campaign has no template");
+      }
+      const template = getTemplateById(campaign.template_id);
+      const sender = await getSenderDefaults();
+      const account = getDefaultEmailAccountFull();
+
+      // Candidate list — for the recipient switcher dropdown. We cap it at
+      // a sane size so the UI doesn't try to render thousands of options.
+      let candidates: RecipientSummary[] = [];
+      if (campaign.schedule_type === "recurring") {
+        const filters = getCampaignFilters(campaignId);
+        candidates = resolveRecipientsForFilters(filters).slice(0, 100);
+      } else {
+        const emails = getCampaignEmails(campaignId);
+        candidates = emails
+          .filter((e) => e.contact_id !== null)
+          .slice(0, 100)
+          .map((e) => ({
+            id: e.contact_id as number,
+            name: e.to_name ?? "",
+            email: e.to_email,
+            client_name: null,
+            area: null,
+          }));
+      }
+
+      const chosenId =
+        sampleContactId ?? candidates[0]?.id ?? null;
+
+      let resolvedFor: RecipientSummary | null = null;
+      const contact =
+        chosenId !== null
+          ? (() => {
+              try {
+                return getContactById(chosenId);
+              } catch {
+                return null;
+              }
+            })()
+          : null;
+
+      if (contact) {
+        resolvedFor = {
+          id: contact.id,
+          name: contact.name,
+          email: contact.email,
+          client_name: contact.client?.name ?? null,
+          area: contact.area,
+        };
+      }
+
+      const rendered = renderTemplateForContact(
+        template,
+        contact,
+        sender,
+        account?.email ?? ""
+      );
+
+      return {
+        html: rendered.html,
+        subject: rendered.subject,
+        resolvedFor,
+        missingFields: rendered.missingFields,
+        candidateRecipients: candidates,
+      };
+    }
   );
 }

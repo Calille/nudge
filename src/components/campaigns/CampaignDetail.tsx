@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { RefreshCw } from "lucide-react";
-import { SlideOver } from "@/components/shared/Modal";
+import { Eye, RefreshCw } from "lucide-react";
+import { Modal, SlideOver } from "@/components/shared/Modal";
 import { Button } from "@/components/shared/Button";
 import { Badge } from "@/components/shared/Badge";
 import { useCampaignStore } from "@/stores/campaignStore";
 import { toast } from "@/stores/uiStore";
 import type { CampaignWithEmails } from "@/types";
+import { CampaignPreview } from "./CampaignPreview";
 
 interface Props {
   open: boolean;
@@ -16,6 +17,7 @@ interface Props {
 export function CampaignDetail({ open, onClose, campaignId }: Props) {
   const [campaign, setCampaign] = useState<CampaignWithEmails | null>(null);
   const [busy, setBusy] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const reloadList = useCampaignStore((s) => s.load);
 
   const load = async () => {
@@ -92,6 +94,13 @@ export function CampaignDetail({ open, onClose, campaignId }: Props) {
       footer={
         campaign && (
           <>
+            <Button
+              variant="ghost"
+              onClick={() => setPreviewOpen(true)}
+              icon={<Eye size={14} />}
+            >
+              Preview
+            </Button>
             {campaign.status === "draft" && (
               <Button
                 variant="primary"
@@ -144,6 +153,24 @@ export function CampaignDetail({ open, onClose, campaignId }: Props) {
                 value={new Date(campaign.completed_at).toLocaleString()}
               />
             )}
+            {campaign.schedule_type && (
+              <Row
+                label="Schedule"
+                value={describeSchedule(campaign)}
+              />
+            )}
+            {campaign.next_run_at && (
+              <Row
+                label="Next run"
+                value={new Date(campaign.next_run_at).toLocaleString()}
+              />
+            )}
+            {campaign.last_run_at && (
+              <Row
+                label="Last run"
+                value={new Date(campaign.last_run_at).toLocaleString()}
+              />
+            )}
           </div>
 
           <div>
@@ -190,8 +217,49 @@ export function CampaignDetail({ open, onClose, campaignId }: Props) {
           </div>
         </div>
       )}
+
+      {campaignId !== null && (
+        <Modal
+          open={previewOpen}
+          onClose={() => setPreviewOpen(false)}
+          title="Preview"
+          size="xl"
+          className="h-[80vh]"
+        >
+          <div className="-mx-5 -my-4 h-full">
+            <CampaignPreview campaignId={campaignId} />
+          </div>
+        </Modal>
+      )}
     </SlideOver>
   );
+}
+
+function describeSchedule(c: CampaignWithEmails): string {
+  if (c.schedule_type === "one_off") {
+    return c.scheduled_at
+      ? `One-off — ${new Date(c.scheduled_at).toLocaleString()}`
+      : "One-off";
+  }
+  if (c.schedule_type === "recurring" && c.recurrence_pattern) {
+    const p = c.recurrence_pattern;
+    if (p.frequency === "weekly") {
+      const days = [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+      ];
+      return `Weekly — ${days[p.day_of_week]} at ${p.time}`;
+    }
+    if (p.frequency === "monthly") {
+      return `Monthly — day ${p.day_of_month} at ${p.time}`;
+    }
+  }
+  return c.schedule_type ?? "—";
 }
 
 function Stat({

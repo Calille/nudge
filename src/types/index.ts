@@ -175,6 +175,14 @@ export interface RecipientSummary {
   area: string | null;
 }
 
+export interface CampaignPreview {
+  html: string;
+  subject: string;
+  resolvedFor: RecipientSummary | null;
+  missingFields: string[];
+  candidateRecipients: RecipientSummary[];
+}
+
 export interface EmailAccount {
   id: number;
   provider: "gmail" | "outlook" | "smtp";

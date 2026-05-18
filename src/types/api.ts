@@ -1,6 +1,7 @@
 import type {
   Campaign,
   CampaignFilters,
+  CampaignPreview,
   CampaignSchedule,
   CampaignWithEmails,
   Client,
@@ -119,6 +120,10 @@ export interface NudgeMailAPI {
     setFilters(campaignId: number, filters: CampaignFilters): Promise<void>;
     getFilters(campaignId: number): Promise<CampaignFilters>;
     resolveRecipients(filters: CampaignFilters): Promise<RecipientSummary[]>;
+    preview(
+      campaignId: number,
+      sampleContactId?: number | null
+    ): Promise<CampaignPreview>;
   };
 
   settings: {

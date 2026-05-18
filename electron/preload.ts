@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from "electron";
 import type {
   Campaign,
   CampaignFilters,
+  CampaignPreview,
   CampaignSchedule,
   CampaignWithEmails,
   Client,
@@ -184,6 +185,12 @@ const api = {
       invoke<CampaignFilters>("campaigns:getFilters", campaignId),
     resolveRecipients: (filters: CampaignFilters) =>
       invoke<RecipientSummary[]>("campaigns:resolveRecipients", filters),
+    preview: (campaignId: number, sampleContactId?: number | null) =>
+      invoke<CampaignPreview>(
+        "campaigns:preview",
+        campaignId,
+        sampleContactId ?? null
+      ),
   },
   settings: {
     connectGmail: () => invoke<EmailAccount>("settings:connect-gmail"),
