@@ -48,7 +48,8 @@ async function runLoopbackFlow(): Promise<GmailTokens & { email: string; name?: 
       }
       // Google accepts loopback redirects with any port for installed
       // apps (see https://developers.google.com/identity/protocols/oauth2/native-app).
-      const redirectUri = `http://localhost:${address.port}/oauth2callback`;
+      // Kept path-less for symmetry with the Outlook flow.
+      const redirectUri = `http://localhost:${address.port}`;
       const oauth2 = createOAuth2Client(redirectUri);
       const authUrl = oauth2.generateAuthUrl({
         access_type: "offline",
