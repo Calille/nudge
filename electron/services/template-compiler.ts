@@ -145,7 +145,7 @@ export function wrapAndCompileHtml(
     ${logoSection}
     <mj-section background-color="#FFFFFF" padding="32px">
       <mj-column>
-        <mj-raw>${safeHtml}</mj-raw>
+        <mj-text padding="0">${safeHtml}</mj-text>
       </mj-column>
     </mj-section>
   </mj-body>
