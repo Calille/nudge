@@ -173,6 +173,17 @@ export interface ImportResult {
   errors: Array<{ row: number; message: string }>;
 }
 
+export interface StrictImportRowError {
+  row: number;
+  reason: string;
+}
+
+export interface StrictImportResult {
+  imported: number;
+  skipped: number;
+  errors: StrictImportRowError[];
+}
+
 export interface ColumnMapping {
   client_name?: string;
   name: string;

@@ -1,5 +1,10 @@
 import { create } from "zustand";
-import type { Client, Contact, ContactFilters } from "@/types";
+import type {
+  Client,
+  Contact,
+  ContactFilters,
+  StrictImportResult,
+} from "@/types";
 
 interface ContactState {
   rows: Contact[];
@@ -20,6 +25,7 @@ interface ContactState {
   load: () => Promise<void>;
   loadClients: () => Promise<void>;
   loadTags: () => Promise<void>;
+  importContacts: (filePath: string) => Promise<StrictImportResult>;
 }
 
 export const useContactStore = create<ContactState>((set, get) => ({
@@ -82,5 +88,16 @@ export const useContactStore = create<ContactState>((set, get) => ({
   loadTags: async () => {
     const allTags = await window.api.contacts.allTags();
     set({ allTags });
+  },
+
+  importContacts: async (filePath: string) => {
+    const result = await window.api.contacts.importStrict(filePath);
+    // Refresh dependent state — new contacts, possibly new clients and tags.
+    await Promise.all([
+      get().load(),
+      get().loadClients(),
+      get().loadTags(),
+    ]);
+    return result;
   },
 }));

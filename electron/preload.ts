@@ -22,6 +22,7 @@ import type {
   SendProgressEvent,
   Staff,
   StaffFilters,
+  StrictImportResult,
   Template,
 } from "../src/types";
 
@@ -70,6 +71,8 @@ const api = {
     allTags: () => invoke<string[]>("contacts:all-tags"),
     setClientTypes: (contactId: number, clientTypeIds: number[]) =>
       invoke<void>("contacts:setClientTypes", contactId, clientTypeIds),
+    importStrict: (filePath: string) =>
+      invoke<StrictImportResult>("contacts:import", filePath),
   },
   clientTypes: {
     list: () => invoke<ClientTypeWithUsage[]>("clientTypes:list"),

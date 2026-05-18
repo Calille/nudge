@@ -4,7 +4,7 @@ import { Button } from "@/components/shared/Button";
 import { ContactsTable } from "./ContactsTable";
 import { ClientGroupView } from "./ClientGroupView";
 import { ContactDetail } from "./ContactDetail";
-import { ImportWizard } from "./ImportWizard";
+import { ImportDialog } from "./ImportDialog";
 import { ContactCreateModal } from "./ContactCreateModal";
 import { useUIStore } from "@/stores/uiStore";
 import { useContactStore } from "@/stores/contactStore";
@@ -77,7 +77,7 @@ export function ContactsView() {
         {tab === "all" ? <ContactsTable /> : <ClientGroupView />}
       </div>
 
-      <ImportWizard open={importOpen} onClose={() => setImportOpen(false)} />
+      <ImportDialog open={importOpen} onClose={() => setImportOpen(false)} />
       <ContactDetail
         open={detailId !== null}
         onClose={closeDetail}

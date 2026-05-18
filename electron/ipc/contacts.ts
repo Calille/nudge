@@ -9,6 +9,7 @@ import {
   updateContact,
 } from "../database/queries";
 import { importRows, readSpreadsheet } from "../utils/spreadsheet-parser";
+import { importContactsStrict } from "../utils/strict-import";
 import { registerHandler } from "./helpers";
 import type { ColumnMapping, Contact, ContactFilters } from "../../src/types";
 
@@ -54,6 +55,7 @@ export function registerContactHandlers() {
         role: data.role ?? null,
         phone: data.phone ?? null,
         notes: data.notes ?? null,
+        area: data.area ?? null,
         tags: data.tags ?? [],
         is_active: data.is_active ?? 1,
       })
@@ -79,6 +81,10 @@ export function registerContactHandlers() {
   );
 
   registerHandler("contacts:all-tags", async () => allContactTags());
+
+  registerHandler("contacts:import", async (_e, filePath: string) =>
+    importContactsStrict(filePath)
+  );
 
   registerHandler("clients:list", async () => listClients());
 }

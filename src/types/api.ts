@@ -21,6 +21,7 @@ import type {
   SenderDefaults,
   Staff,
   StaffFilters,
+  StrictImportResult,
   Template,
 } from "./index";
 
@@ -44,6 +45,7 @@ export interface NudgeMailAPI {
     bulkTag(ids: number[], tags: string[], action: "add" | "remove"): Promise<void>;
     allTags(): Promise<string[]>;
     setClientTypes(contactId: number, clientTypeIds: number[]): Promise<void>;
+    importStrict(filePath: string): Promise<StrictImportResult>;
   };
 
   clientTypes: {
