@@ -7,12 +7,20 @@ import { sendViaGmail } from "./gmail";
 import { sendViaOutlook } from "./outlook";
 import { sendViaSmtp } from "./smtp";
 
+export interface InlineAttachment {
+  filename: string;
+  content: Buffer;
+  cid: string;
+  contentType: string;
+}
+
 export interface EmailPayload {
   to: { name?: string | null; email: string };
   replyTo?: string;
   subject: string;
   html: string;
   text: string;
+  inlineAttachments?: InlineAttachment[];
 }
 
 export function requireDefaultAccount() {
@@ -49,6 +57,7 @@ export async function sendEmail(
     subject: payload.subject,
     html: payload.html,
     text: payload.text,
+    inlineAttachments: payload.inlineAttachments ?? [],
   };
 
   try {

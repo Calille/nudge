@@ -134,6 +134,12 @@ const api = {
       ),
     sendTest: (templateId: number, toEmail: string, contactId: number | null) =>
       invoke<void>("templates:send-test", templateId, toEmail, contactId),
+    uploadLogo: (templateId: number, sourcePath: string) =>
+      invoke<Template>("templates:uploadLogo", templateId, sourcePath),
+    removeLogo: (templateId: number) =>
+      invoke<Template>("templates:removeLogo", templateId),
+    logoDataUri: (templateId: number) =>
+      invoke<string | null>("templates:logoDataUri", templateId),
   },
   campaigns: {
     getAll: () => invoke<Campaign[]>("campaigns:list"),

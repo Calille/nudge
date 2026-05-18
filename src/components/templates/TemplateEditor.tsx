@@ -9,7 +9,7 @@ import Underline from "@tiptap/extension-underline";
 import TextStyle from "@tiptap/extension-text-style";
 import { Color } from "@tiptap/extension-color";
 import Highlight from "@tiptap/extension-highlight";
-import { Monitor, Save, Send, Smartphone, Trash2 } from "lucide-react";
+import { ImageIcon, Monitor, Save, Send, Smartphone, Trash2, Upload, X } from "lucide-react";
 import { Modal } from "@/components/shared/Modal";
 import { Button } from "@/components/shared/Button";
 import { Input, Select } from "@/components/shared/Input";
@@ -52,6 +52,8 @@ export function TemplateEditorModal({ open, onClose, templateId }: Props) {
   );
   const [saving, setSaving] = useState(false);
   const [testEmailOpen, setTestEmailOpen] = useState(false);
+  const [logoDataUri, setLogoDataUri] = useState<string | null>(null);
+  const [logoBusy, setLogoBusy] = useState(false);
   const subjectInputRef = useRef<HTMLInputElement>(null);
 
   const editor = useEditor({
@@ -85,6 +87,7 @@ export function TemplateEditorModal({ open, onClose, templateId }: Props) {
         setName("");
         setSubject("Quick introduction — {{sender_name}} from {{company_name}}");
         setCategory("Introduction");
+        setLogoDataUri(null);
         editor?.commands.setContent(
           `<p>Hi {{contact_first_name}},</p><p>I hope this finds you well. My name is {{sender_name}} from {{company_name}}, and I wanted to reach out about the team we have available for {{client_name}} this term.</p><p>{{staff_list}}</p><p>Would a quick call this week work to discuss?</p><p>Best regards,<br/>{{sender_name}}</p>`
         );
@@ -96,6 +99,12 @@ export function TemplateEditorModal({ open, onClose, templateId }: Props) {
           setSubject(t.subject);
           setCategory(t.category ?? "Custom");
           editor?.commands.setContent(t.body_mjml || "");
+          if (t.logo_filename) {
+            const uri = await window.api.templates.logoDataUri(t.id);
+            setLogoDataUri(uri);
+          } else {
+            setLogoDataUri(null);
+          }
         } catch (err: any) {
           toast({
             title: "Failed to load template",
@@ -125,7 +134,7 @@ export function TemplateEditorModal({ open, onClose, templateId }: Props) {
           ? await window.api.contacts.getById(previewContactId)
           : null;
 
-        const merged = localMerge(clientSubject, html, contact);
+        const merged = localMerge(clientSubject, html, contact, logoDataUri);
         setPreviewSubject(merged.subject);
         setPreviewHtml(merged.html);
         setMissingFields(merged.missing);
@@ -135,7 +144,7 @@ export function TemplateEditorModal({ open, onClose, templateId }: Props) {
     }, 250);
     return () => clearTimeout(handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [subject, currentHtml, previewContactId, open]);
+  }, [subject, currentHtml, previewContactId, open, logoDataUri]);
 
   const save = async () => {
     if (!editor) return;
@@ -186,6 +195,57 @@ export function TemplateEditorModal({ open, onClose, templateId }: Props) {
       onClose();
     } catch (err: any) {
       toast({ title: "Delete failed", description: err.message, tone: "error" });
+    }
+  };
+
+  const uploadLogoForTemplate = async () => {
+    if (!template) {
+      toast({
+        title: "Save the template first",
+        description: "Logos attach to a saved template.",
+        tone: "info",
+      });
+      return;
+    }
+    const file = await window.api.utils.openFileDialog([
+      { name: "Image", extensions: ["png", "jpg", "jpeg", "gif", "webp", "svg"] },
+    ]);
+    if (!file) return;
+    setLogoBusy(true);
+    try {
+      const updated = await window.api.templates.uploadLogo(template.id, file);
+      setTemplate(updated);
+      const uri = await window.api.templates.logoDataUri(updated.id);
+      setLogoDataUri(uri);
+      reload();
+      toast({ title: "Logo added", tone: "success" });
+    } catch (err: any) {
+      toast({
+        title: "Couldn't upload logo",
+        description: err.message,
+        tone: "error",
+      });
+    } finally {
+      setLogoBusy(false);
+    }
+  };
+
+  const removeLogoFromTemplate = async () => {
+    if (!template || !template.logo_filename) return;
+    setLogoBusy(true);
+    try {
+      const updated = await window.api.templates.removeLogo(template.id);
+      setTemplate(updated);
+      setLogoDataUri(null);
+      reload();
+    } catch (err: any) {
+      toast({
+        title: "Couldn't remove logo",
+        description: err.message,
+        tone: "error",
+      });
+    } finally {
+      setLogoBusy(false);
     }
   };
 
@@ -277,6 +337,59 @@ export function TemplateEditorModal({ open, onClose, templateId }: Props) {
                 placeholder="Subject line (use merge fields)"
                 className="w-full h-9 px-3 bg-bg-subtle border border-border rounded-md text-sm focus:outline-none focus:border-accent/60"
               />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-fg-muted mb-1.5">
+                Logo
+              </label>
+              {logoDataUri ? (
+                <div className="flex items-center gap-3 p-2 bg-bg-subtle border border-border rounded-md">
+                  <img
+                    src={logoDataUri}
+                    alt="Template logo"
+                    className="h-12 w-auto max-w-[120px] bg-white rounded object-contain"
+                  />
+                  <div className="flex-1 min-w-0 text-xs text-fg-muted">
+                    Appears above the email body. Sent as an inline image so
+                    recipients don't need to load remote content.
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    icon={<X size={12} />}
+                    onClick={removeLogoFromTemplate}
+                    loading={logoBusy}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={uploadLogoForTemplate}
+                  disabled={!template || logoBusy}
+                  className="w-full flex items-center gap-3 p-3 bg-bg-subtle border border-dashed border-border rounded-md text-left transition-colors hover:bg-bg-hover disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <div className="w-10 h-10 rounded bg-bg-elevated border border-border flex items-center justify-center text-fg-muted shrink-0">
+                    {logoBusy ? (
+                      <span className="inline-block w-3.5 h-3.5 rounded-full border-2 border-fg-muted/40 border-t-fg animate-spin" />
+                    ) : (
+                      <ImageIcon size={16} />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-fg flex items-center gap-1.5">
+                      <Upload size={12} /> Add a logo
+                    </div>
+                    <div className="text-xs text-fg-muted">
+                      {template
+                        ? "PNG, JPG, GIF, WEBP or SVG. Up to 5 MB."
+                        : "Save the template first to attach a logo."}
+                    </div>
+                  </div>
+                </button>
+              )}
             </div>
           </div>
 
@@ -443,7 +556,8 @@ function SendTestModal({
 function localMerge(
   subject: string,
   html: string,
-  contact: Awaited<ReturnType<typeof window.api.contacts.getById>> | null
+  contact: Awaited<ReturnType<typeof window.api.contacts.getById>> | null,
+  logoSrc: string | null
 ): { subject: string; html: string; missing: string[] } {
   const MERGE = /{{\s*([a-zA-Z0-9_]+)\s*}}/g;
   const missing = new Set<string>();
@@ -479,7 +593,10 @@ function localMerge(
     return "";
   });
 
-  const wrapped = `<!doctype html><html><body style="margin:0;padding:24px;font-family:Helvetica,Arial,sans-serif;background:#f5f5f7;color:#1f2937;"><div style="max-width:600px;margin:0 auto;background:#fff;border-radius:6px;padding:28px;box-shadow:0 1px 3px rgba(0,0,0,0.08);">${body}</div></body></html>`;
+  const logoBlock = logoSrc
+    ? `<img src="${logoSrc}" alt="" style="display:block;max-width:160px;height:auto;margin:0 0 20px;" />`
+    : "";
+  const wrapped = `<!doctype html><html><body style="margin:0;padding:24px;font-family:Helvetica,Arial,sans-serif;background:#f5f5f7;color:#1f2937;"><div style="max-width:600px;margin:0 auto;background:#fff;border-radius:6px;padding:28px;box-shadow:0 1px 3px rgba(0,0,0,0.08);">${logoBlock}${body}</div></body></html>`;
 
   return { subject: sub, html: wrapped, missing: Array.from(missing) };
 }

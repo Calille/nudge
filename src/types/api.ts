@@ -93,6 +93,9 @@ export interface NudgeMailAPI {
       contactId: number | null
     ): Promise<{ subject: string; html: string; text: string; missingFields: string[] }>;
     sendTest(templateId: number, toEmail: string, contactId: number | null): Promise<void>;
+    uploadLogo(templateId: number, sourcePath: string): Promise<Template>;
+    removeLogo(templateId: number): Promise<Template>;
+    logoDataUri(templateId: number): Promise<string | null>;
   };
 
   campaigns: {

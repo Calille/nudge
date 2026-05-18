@@ -1,5 +1,6 @@
 import type Database from "better-sqlite3";
 import * as m002 from "./002_client_types_and_scheduling";
+import * as m003 from "./003_template_logos";
 
 export interface Migration {
   version: number;
@@ -11,6 +12,7 @@ export interface Migration {
 // (no fs.readdirSync). Each new migration is added here explicitly.
 export const MIGRATIONS: Migration[] = [
   { version: m002.version, description: m002.description, up: m002.up },
+  { version: m003.version, description: m003.description, up: m003.up },
 ];
 
 export function getCurrentSchemaVersion(db: Database.Database): number {

@@ -178,6 +178,13 @@ async function getAccessToken(accountId: number): Promise<string> {
   return tokens.access_token;
 }
 
+export interface OutlookInlineAttachment {
+  filename: string;
+  content: Buffer;
+  cid: string;
+  contentType: string;
+}
+
 export interface OutlookSendPayload {
   from: string;
   fromName?: string | null;
@@ -187,6 +194,7 @@ export interface OutlookSendPayload {
   subject: string;
   html: string;
   text: string;
+  inlineAttachments?: OutlookInlineAttachment[];
 }
 
 export async function sendViaOutlook(
@@ -194,6 +202,15 @@ export async function sendViaOutlook(
   payload: OutlookSendPayload
 ): Promise<{ messageId?: string }> {
   const accessToken = await getAccessToken(accountId);
+  const attachments = (payload.inlineAttachments ?? []).map((a) => ({
+    "@odata.type": "#microsoft.graph.fileAttachment",
+    name: a.filename,
+    contentType: a.contentType,
+    contentBytes: a.content.toString("base64"),
+    contentId: a.cid,
+    isInline: true,
+  }));
+
   const body = {
     message: {
       subject: payload.subject,
@@ -209,6 +226,7 @@ export async function sendViaOutlook(
       replyTo: payload.replyTo
         ? [{ emailAddress: { address: payload.replyTo } }]
         : undefined,
+      attachments: attachments.length > 0 ? attachments : undefined,
     },
     saveToSentItems: true,
   };

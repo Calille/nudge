@@ -116,13 +116,20 @@ export function applyMerge(
  * Wrap plain HTML from the TipTap editor in a responsive MJML shell and compile.
  * The editor's HTML lives inside a single column within an `mj-raw` tag so we
  * retain the rich text styling while still getting MJML's cross-client table
- * layout.
+ * layout. When `logoSrc` is provided, a header section with the logo is prepended.
  */
 export function wrapAndCompileHtml(
   innerHtml: string,
-  options: { accentColor?: string } = {}
+  options: { accentColor?: string; logoSrc?: string | null } = {}
 ): { html: string; errors: string[] } {
   const safeHtml = innerHtml || "<p></p>";
+  const logoSection = options.logoSrc
+    ? `<mj-section background-color="#FFFFFF" padding="24px 32px 0">
+      <mj-column>
+        <mj-image src="${options.logoSrc}" alt="" width="160px" align="left" padding="0" />
+      </mj-column>
+    </mj-section>`
+    : "";
   const mjmlSource = `<mjml>
   <mj-head>
     <mj-attributes>
@@ -135,6 +142,7 @@ export function wrapAndCompileHtml(
     </mj-style>
   </mj-head>
   <mj-body background-color="#F5F5F7">
+    ${logoSection}
     <mj-section background-color="#FFFFFF" padding="32px">
       <mj-column>
         <mj-raw>${safeHtml}</mj-raw>
@@ -168,7 +176,8 @@ export function renderTemplateForContact(
   template: Template,
   contact: ContactWithRelations | null,
   sender: SenderDefaults,
-  senderEmail: string
+  senderEmail: string,
+  options: { logoSrc?: string | null } = {}
 ): RenderedEmail {
   const context = buildMergeContext(contact, sender);
   context.sender_email = senderEmail;
@@ -181,7 +190,9 @@ export function renderTemplateForContact(
     : "";
   const innerHtml = `${bodyMerge.output}${signature}`;
 
-  const { html } = wrapAndCompileHtml(innerHtml);
+  const { html } = wrapAndCompileHtml(innerHtml, {
+    logoSrc: options.logoSrc ?? null,
+  });
   const missingFields = Array.from(
     new Set([...subjectMerge.missing, ...bodyMerge.missing])
   );

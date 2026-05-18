@@ -13,7 +13,10 @@ import {
 import { requireDefaultAccount, sendEmail } from "./email-sender";
 import { renderTemplateForContact } from "./template-compiler";
 import { getSenderDefaults } from "./sender-defaults";
+import { readLogo } from "./logo-storage";
 import type { SendProgressEvent } from "../../src/types";
+
+const TEMPLATE_LOGO_CID = "template-logo";
 
 interface RunnerState {
   campaignId: number;
@@ -68,6 +71,21 @@ export async function runCampaign(campaignId: number) {
   const sender = await getSenderDefaults();
   const account = requireDefaultAccount();
 
+  // Read the logo file once at the start of the run; reuse the same bytes
+  // for every recipient so we're not hitting disk per send.
+  const logo = readLogo(template.logo_filename);
+  const logoSrc = logo ? `cid:${TEMPLATE_LOGO_CID}` : null;
+  const logoAttachments = logo
+    ? [
+        {
+          filename: logo.filename,
+          content: logo.buffer,
+          cid: TEMPLATE_LOGO_CID,
+          contentType: logo.mime,
+        },
+      ]
+    : undefined;
+
   const state: RunnerState = {
     campaignId,
     paused: false,
@@ -104,7 +122,8 @@ export async function runCampaign(campaignId: number) {
         template,
         contact,
         sender,
-        account.email
+        account.email,
+        { logoSrc }
       );
 
       try {
@@ -115,6 +134,7 @@ export async function runCampaign(campaignId: number) {
             html: rendered.html,
             text: rendered.text,
             replyTo: sender.reply_to || undefined,
+            inlineAttachments: logoAttachments,
           },
           { fromName: sender.from_name || undefined }
         );

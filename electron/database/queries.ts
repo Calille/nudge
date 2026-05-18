@@ -73,6 +73,7 @@ function mapTemplate(row: any): Template {
     merge_fields: safeJson<string[]>(row.merge_fields, []),
     category: row.category,
     is_default: row.is_default,
+    logo_filename: row.logo_filename ?? null,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
@@ -680,12 +681,13 @@ export function createTemplate(data: {
   body_text?: string;
   merge_fields?: string[];
   category?: string;
+  logo_filename?: string | null;
 }): Template {
   const db = getDb();
   const info = db
     .prepare(
-      `INSERT INTO templates (name, subject, body_mjml, body_html, body_text, merge_fields, category)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO templates (name, subject, body_mjml, body_html, body_text, merge_fields, category, logo_filename)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       data.name,
@@ -694,7 +696,8 @@ export function createTemplate(data: {
       data.body_html ?? null,
       data.body_text ?? null,
       JSON.stringify(data.merge_fields ?? []),
-      data.category ?? null
+      data.category ?? null,
+      data.logo_filename ?? null
     );
   return getTemplateById(Number(info.lastInsertRowid));
 }
@@ -705,7 +708,7 @@ export function updateTemplate(id: number, data: Partial<Template>): Template {
   const merged = { ...existing, ...data };
   db.prepare(
     `UPDATE templates
-     SET name = ?, subject = ?, body_mjml = ?, body_html = ?, body_text = ?, merge_fields = ?, category = ?, updated_at = CURRENT_TIMESTAMP
+     SET name = ?, subject = ?, body_mjml = ?, body_html = ?, body_text = ?, merge_fields = ?, category = ?, logo_filename = ?, updated_at = CURRENT_TIMESTAMP
      WHERE id = ?`
   ).run(
     merged.name,
@@ -715,6 +718,7 @@ export function updateTemplate(id: number, data: Partial<Template>): Template {
     merged.body_text,
     JSON.stringify(merged.merge_fields ?? []),
     merged.category,
+    merged.logo_filename ?? null,
     id
   );
   return getTemplateById(id);
@@ -735,6 +739,7 @@ export function duplicateTemplate(id: number): Template {
     body_text: original.body_text ?? undefined,
     merge_fields: original.merge_fields,
     category: original.category ?? undefined,
+    logo_filename: original.logo_filename,
   });
 }
 

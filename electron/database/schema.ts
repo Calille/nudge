@@ -134,7 +134,7 @@ export const SCHEMA_STATEMENTS: string[] = [
   );`,
 ];
 
-export const CURRENT_SCHEMA_VERSION = 2;
+export const CURRENT_SCHEMA_VERSION = 3;
 
 // The baseline (above) represents v1 of the schema. Every change beyond
 // that lives in its own file under ./migrations and is applied on boot

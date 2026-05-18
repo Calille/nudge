@@ -45,6 +45,13 @@ export async function connectSmtpAccount(input: {
   });
 }
 
+export interface SmtpInlineAttachment {
+  filename: string;
+  content: Buffer;
+  cid: string;
+  contentType: string;
+}
+
 export interface SmtpSendPayload {
   from: string;
   fromName?: string | null;
@@ -54,6 +61,7 @@ export interface SmtpSendPayload {
   subject: string;
   html: string;
   text: string;
+  inlineAttachments?: SmtpInlineAttachment[];
 }
 
 export async function sendViaSmtp(
@@ -79,6 +87,12 @@ export async function sendViaSmtp(
       subject: payload.subject,
       html: payload.html,
       text: payload.text,
+      attachments: payload.inlineAttachments?.map((a) => ({
+        filename: a.filename,
+        content: a.content,
+        cid: a.cid,
+        contentType: a.contentType,
+      })),
     });
     return { messageId: info.messageId };
   } finally {

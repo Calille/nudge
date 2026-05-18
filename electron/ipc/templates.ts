@@ -16,6 +16,11 @@ import {
 } from "../services/template-compiler";
 import { getSenderDefaults } from "../services/sender-defaults";
 import { requireDefaultAccount, sendEmail } from "../services/email-sender";
+import {
+  logoDataUri,
+  readLogo,
+  uploadLogo,
+} from "../services/logo-storage";
 import type { CreateTemplate, Template } from "../../src/types";
 
 function normaliseTemplate<T extends Partial<CreateTemplate>>(data: T): T {
@@ -71,16 +76,45 @@ export function registerTemplateHandlers() {
         try {
           return requireDefaultAccount();
         } catch {
-          return { email: "me@example.com" } as any;
+          return { email: "me@example.com" } as { email: string };
         }
       })();
+      // For previews we render the logo as a data URI so the iframe shows
+      // it without network access. At real send time the runner swaps
+      // this for a cid: reference + inline attachment.
       const rendered = renderTemplateForContact(
         template,
         contact,
         sender,
-        account.email
+        account.email,
+        { logoSrc: logoDataUri(template.logo_filename) }
       );
       return rendered;
+    }
+  );
+
+  registerHandler(
+    "templates:uploadLogo",
+    async (_e, templateId: number, sourcePath: string) => {
+      const template = getTemplateById(templateId);
+      const filename = await uploadLogo(sourcePath);
+      return updateTemplate(template.id, { logo_filename: filename });
+    }
+  );
+
+  registerHandler(
+    "templates:removeLogo",
+    async (_e, templateId: number) => {
+      const template = getTemplateById(templateId);
+      return updateTemplate(template.id, { logo_filename: null });
+    }
+  );
+
+  registerHandler(
+    "templates:logoDataUri",
+    async (_e, templateId: number) => {
+      const template = getTemplateById(templateId);
+      return logoDataUri(template.logo_filename);
     }
   );
 
@@ -96,11 +130,16 @@ export function registerTemplateHandlers() {
       const sender = await getSenderDefaults();
       const contact = contactId ? getContactById(contactId) : null;
       const account = requireDefaultAccount();
+
+      // For real sends the logo goes as a CID-referenced inline attachment.
+      const logo = readLogo(template.logo_filename);
+      const logoCid = logo ? "template-logo" : null;
       const rendered = renderTemplateForContact(
         template,
         contact,
         sender,
-        account.email
+        account.email,
+        { logoSrc: logoCid ? `cid:${logoCid}` : null }
       );
       const res = await sendEmail(
         {
@@ -109,6 +148,16 @@ export function registerTemplateHandlers() {
           html: rendered.html,
           text: rendered.text,
           replyTo: sender.reply_to || undefined,
+          inlineAttachments: logo
+            ? [
+                {
+                  filename: logo.filename,
+                  content: logo.buffer,
+                  cid: "template-logo",
+                  contentType: logo.mime,
+                },
+              ]
+            : undefined,
         },
         { fromName: sender.from_name || undefined }
       );

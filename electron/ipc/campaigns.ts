@@ -23,6 +23,7 @@ import {
 import { computeNextRunAt, validateSchedule } from "../utils/schedule";
 import { getSenderDefaults } from "../services/sender-defaults";
 import { renderTemplateForContact } from "../services/template-compiler";
+import { logoDataUri } from "../services/logo-storage";
 import type {
   CampaignFilters,
   CampaignPreview,
@@ -198,7 +199,8 @@ export function registerCampaignHandlers() {
         template,
         contact,
         sender,
-        account?.email ?? ""
+        account?.email ?? "",
+        { logoSrc: logoDataUri(template.logo_filename) }
       );
 
       return {

@@ -132,6 +132,13 @@ async function getAuthedClient(accountId: number) {
   return oauth2;
 }
 
+export interface GmailInlineAttachment {
+  filename: string;
+  content: Buffer;
+  cid: string;
+  contentType: string;
+}
+
 export interface GmailSendPayload {
   from: string;
   fromName?: string | null;
@@ -141,35 +148,88 @@ export interface GmailSendPayload {
   subject: string;
   html: string;
   text: string;
+  inlineAttachments?: GmailInlineAttachment[];
 }
 
-function buildRfc822(p: GmailSendPayload): string {
-  const from = p.fromName ? `"${p.fromName}" <${p.from}>` : p.from;
-  const to = p.toName ? `"${p.toName}" <${p.to}>` : p.to;
-  const boundary = `b_${Math.random().toString(36).slice(2)}`;
-  const lines = [
-    `From: ${from}`,
-    `To: ${to}`,
-    p.replyTo ? `Reply-To: ${p.replyTo}` : "",
-    `Subject: ${encodeSubject(p.subject)}`,
-    `MIME-Version: 1.0`,
-    `Content-Type: multipart/alternative; boundary="${boundary}"`,
-    "",
+function randomBoundary(): string {
+  return `b_${Math.random().toString(36).slice(2)}_${Date.now().toString(36)}`;
+}
+
+function buildAlternativeBody(text: string, html: string, boundary: string): string {
+  return [
     `--${boundary}`,
     `Content-Type: text/plain; charset=UTF-8`,
     `Content-Transfer-Encoding: 7bit`,
     "",
-    p.text,
+    text,
     "",
     `--${boundary}`,
     `Content-Type: text/html; charset=UTF-8`,
     `Content-Transfer-Encoding: 7bit`,
     "",
-    p.html,
+    html,
     "",
     `--${boundary}--`,
-  ].filter((l) => l !== undefined);
-  return lines.join("\r\n");
+  ].join("\r\n");
+}
+
+function buildInlinePart(att: GmailInlineAttachment): string {
+  const base64 = att.content
+    .toString("base64")
+    .replace(/(.{76})/g, "$1\r\n");
+  return [
+    `Content-Type: ${att.contentType}; name="${att.filename}"`,
+    `Content-Transfer-Encoding: base64`,
+    `Content-ID: <${att.cid}>`,
+    `Content-Disposition: inline; filename="${att.filename}"`,
+    "",
+    base64,
+  ].join("\r\n");
+}
+
+function buildRfc822(p: GmailSendPayload): string {
+  const from = p.fromName ? `"${p.fromName}" <${p.from}>` : p.from;
+  const to = p.toName ? `"${p.toName}" <${p.to}>` : p.to;
+  const attachments = p.inlineAttachments ?? [];
+
+  const altBoundary = randomBoundary();
+  const altBody = buildAlternativeBody(p.text, p.html, altBoundary);
+
+  const headers: string[] = [
+    `From: ${from}`,
+    `To: ${to}`,
+    p.replyTo ? `Reply-To: ${p.replyTo}` : "",
+    `Subject: ${encodeSubject(p.subject)}`,
+    `MIME-Version: 1.0`,
+  ].filter(Boolean);
+
+  if (attachments.length === 0) {
+    return [
+      ...headers,
+      `Content-Type: multipart/alternative; boundary="${altBoundary}"`,
+      "",
+      altBody,
+    ].join("\r\n");
+  }
+
+  // multipart/related wraps the alternative body + inline images so
+  // mail clients render cid: references against the right parts.
+  const relBoundary = randomBoundary();
+  const partsBody = [
+    `--${relBoundary}`,
+    `Content-Type: multipart/alternative; boundary="${altBoundary}"`,
+    "",
+    altBody,
+    ...attachments.flatMap((att) => [`--${relBoundary}`, buildInlinePart(att)]),
+    `--${relBoundary}--`,
+  ].join("\r\n");
+
+  return [
+    ...headers,
+    `Content-Type: multipart/related; boundary="${relBoundary}"`,
+    "",
+    partsBody,
+  ].join("\r\n");
 }
 
 function encodeSubject(s: string) {

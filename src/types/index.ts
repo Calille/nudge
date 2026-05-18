@@ -84,6 +84,7 @@ export interface Template {
   merge_fields: string[];
   category: string | null;
   is_default: number;
+  logo_filename: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -96,6 +97,7 @@ export interface CreateTemplate {
   body_text?: string;
   merge_fields?: string[];
   category?: string;
+  logo_filename?: string | null;
 }
 
 export type CampaignStatus =
