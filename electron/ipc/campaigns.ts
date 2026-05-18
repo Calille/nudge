@@ -1,4 +1,6 @@
 import {
+  applyCampaignSchedule,
+  clearCampaignSchedule,
   createCampaign,
   deleteCampaign,
   getCampaign,
@@ -8,7 +10,6 @@ import {
   listCampaigns,
   resolveRecipientsForFilters,
   setCampaignFilters,
-  updateCampaignStatus,
 } from "../database/queries";
 import { registerHandler } from "./helpers";
 import {
@@ -17,7 +18,12 @@ import {
   resumeCampaign,
   runCampaign,
 } from "../services/campaign-runner";
-import type { CampaignFilters, CreateCampaign } from "../../src/types";
+import { computeNextRunAt, validateSchedule } from "../utils/schedule";
+import type {
+  CampaignFilters,
+  CampaignSchedule,
+  CreateCampaign,
+} from "../../src/types";
 
 export function registerCampaignHandlers() {
   registerHandler("campaigns:list", async () => listCampaigns());
@@ -38,15 +44,22 @@ export function registerCampaignHandlers() {
     return { started: true };
   });
 
+  // Single entry point for all scheduling — one-off or recurring. Validates
+  // the schedule, computes next_run_at and persists it atomically.
   registerHandler(
     "campaigns:schedule",
-    async (_e, id: number, sendAt: string) => {
-      updateCampaignStatus(id, "scheduled");
-      const { getDb } = await import("../database");
-      getDb()
-        .prepare("UPDATE campaigns SET scheduled_at = ? WHERE id = ?")
-        .run(sendAt, id);
-      return { scheduled: true };
+    async (_e, id: number, schedule: CampaignSchedule | null) => {
+      if (schedule === null) {
+        clearCampaignSchedule(id);
+        return { next_run_at: null };
+      }
+      validateSchedule(schedule);
+      const nextRunAt = computeNextRunAt(schedule);
+      if (schedule.type === "one_off" && nextRunAt === null) {
+        throw new Error("Scheduled time is in the past");
+      }
+      applyCampaignSchedule(id, schedule, nextRunAt);
+      return { next_run_at: nextRunAt };
     }
   );
 

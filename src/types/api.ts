@@ -1,6 +1,7 @@
 import type {
   Campaign,
   CampaignFilters,
+  CampaignSchedule,
   CampaignWithEmails,
   Client,
   ClientType,
@@ -98,7 +99,10 @@ export interface NudgeMailAPI {
     getById(id: number): Promise<CampaignWithEmails>;
     create(data: CreateCampaign): Promise<Campaign>;
     send(campaignId: number): Promise<void>;
-    schedule(campaignId: number, sendAt: string): Promise<void>;
+    schedule(
+      campaignId: number,
+      schedule: CampaignSchedule | null
+    ): Promise<{ next_run_at: string | null }>;
     pause(campaignId: number): Promise<void>;
     resume(campaignId: number): Promise<void>;
     cancel(campaignId: number): Promise<void>;

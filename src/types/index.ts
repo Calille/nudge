@@ -107,6 +107,16 @@ export type CampaignStatus =
   | "paused"
   | "cancelled";
 
+export type ScheduleType = "one_off" | "recurring";
+
+export type RecurrencePattern =
+  | { frequency: "weekly"; day_of_week: number; time: string }
+  | { frequency: "monthly"; day_of_month: number; time: string };
+
+export type CampaignSchedule =
+  | { type: "one_off"; runAt: string }
+  | { type: "recurring"; pattern: RecurrencePattern };
+
 export interface Campaign {
   id: number;
   name: string;
@@ -120,6 +130,11 @@ export interface Campaign {
   sent_count: number;
   failed_count: number;
   created_at: string;
+  schedule_type: ScheduleType | null;
+  recurrence_pattern: RecurrencePattern | null;
+  next_run_at: string | null;
+  last_run_at: string | null;
+  is_active: number;
 }
 
 export interface CampaignEmail {

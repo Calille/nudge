@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from "electron";
 import type {
   Campaign,
   CampaignFilters,
+  CampaignSchedule,
   CampaignWithEmails,
   Client,
   ClientType,
@@ -140,8 +141,8 @@ const api = {
     create: (data: CreateCampaign) =>
       invoke<Campaign>("campaigns:create", data),
     send: (id: number) => invoke<void>("campaigns:send", id),
-    schedule: (id: number, sendAt: string) =>
-      invoke<void>("campaigns:schedule", id, sendAt),
+    schedule: (id: number, schedule: CampaignSchedule | null) =>
+      invoke<{ next_run_at: string | null }>("campaigns:schedule", id, schedule),
     pause: (id: number) => invoke<void>("campaigns:pause", id),
     resume: (id: number) => invoke<void>("campaigns:resume", id),
     cancel: (id: number) => invoke<void>("campaigns:cancel", id),

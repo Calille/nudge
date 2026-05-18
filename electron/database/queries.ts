@@ -3,6 +3,7 @@ import type {
   Campaign,
   CampaignEmail,
   CampaignFilters,
+  CampaignSchedule,
   Client,
   ClientType,
   ClientTypeWithUsage,
@@ -13,6 +14,7 @@ import type {
   EmailAccount,
   PaginatedResult,
   RecipientSummary,
+  RecurrencePattern,
   Staff,
   StaffFilters,
   Template,
@@ -77,6 +79,14 @@ function mapTemplate(row: any): Template {
 }
 
 function mapCampaign(row: any): Campaign {
+  let recurrence: RecurrencePattern | null = null;
+  if (row.recurrence_pattern) {
+    try {
+      recurrence = JSON.parse(row.recurrence_pattern) as RecurrencePattern;
+    } catch {
+      recurrence = null;
+    }
+  }
   return {
     id: row.id,
     name: row.name,
@@ -90,6 +100,11 @@ function mapCampaign(row: any): Campaign {
     sent_count: row.sent_count,
     failed_count: row.failed_count,
     created_at: row.created_at,
+    schedule_type: row.schedule_type ?? null,
+    recurrence_pattern: recurrence,
+    next_run_at: row.next_run_at ?? null,
+    last_run_at: row.last_run_at ?? null,
+    is_active: row.is_active ?? 1,
   };
 }
 
@@ -879,6 +894,85 @@ export function updateCampaignEmail(
 export function deleteCampaign(id: number) {
   const db = getDb();
   db.prepare("DELETE FROM campaigns WHERE id = ?").run(id);
+}
+
+// -------------------- CAMPAIGN SCHEDULING --------------------
+
+export function applyCampaignSchedule(
+  campaignId: number,
+  schedule: CampaignSchedule,
+  nextRunAt: string | null
+) {
+  const db = getDb();
+  if (schedule.type === "one_off") {
+    db.prepare(
+      `UPDATE campaigns
+       SET schedule_type = 'one_off',
+           scheduled_at = ?,
+           recurrence_pattern = NULL,
+           next_run_at = ?,
+           is_active = 1,
+           status = 'scheduled'
+       WHERE id = ?`
+    ).run(schedule.runAt, nextRunAt, campaignId);
+    return;
+  }
+  db.prepare(
+    `UPDATE campaigns
+     SET schedule_type = 'recurring',
+         scheduled_at = NULL,
+         recurrence_pattern = ?,
+         next_run_at = ?,
+         is_active = 1,
+         status = 'scheduled'
+     WHERE id = ?`
+  ).run(JSON.stringify(schedule.pattern), nextRunAt, campaignId);
+}
+
+export function clearCampaignSchedule(campaignId: number) {
+  const db = getDb();
+  db.prepare(
+    `UPDATE campaigns
+     SET schedule_type = NULL,
+         recurrence_pattern = NULL,
+         next_run_at = NULL,
+         is_active = 0
+     WHERE id = ?`
+  ).run(campaignId);
+}
+
+export function setCampaignNextRunAt(
+  campaignId: number,
+  nextRunAt: string | null
+) {
+  const db = getDb();
+  db.prepare(
+    "UPDATE campaigns SET next_run_at = ?, is_active = ? WHERE id = ?"
+  ).run(nextRunAt, nextRunAt ? 1 : 0, campaignId);
+}
+
+export function setCampaignLastRunAt(campaignId: number, lastRunAt: string) {
+  const db = getDb();
+  db.prepare("UPDATE campaigns SET last_run_at = ? WHERE id = ?").run(
+    lastRunAt,
+    campaignId
+  );
+}
+
+export function listDueCampaigns(now: string): Campaign[] {
+  const db = getDb();
+  const rows = db
+    .prepare(
+      `SELECT c.*, t.name AS template_name
+       FROM campaigns c
+       LEFT JOIN templates t ON t.id = c.template_id
+       WHERE c.is_active = 1
+         AND c.next_run_at IS NOT NULL
+         AND c.next_run_at <= ?
+       ORDER BY c.next_run_at ASC`
+    )
+    .all(now) as any[];
+  return rows.map(mapCampaign);
 }
 
 // -------------------- CAMPAIGN FILTERS --------------------

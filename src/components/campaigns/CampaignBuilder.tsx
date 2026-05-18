@@ -17,9 +17,16 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { useTemplateStore } from "@/stores/templateStore";
 import { useCampaignStore } from "@/stores/campaignStore";
 import { toast } from "@/stores/uiStore";
-import type { CampaignFilters, Contact, RecipientSummary, Template } from "@/types";
+import type {
+  CampaignFilters,
+  CampaignSchedule,
+  Contact,
+  RecipientSummary,
+  Template,
+} from "@/types";
 import { cn } from "@/lib/cn";
 import { RecipientFilterBar } from "./RecipientFilterBar";
+import { ScheduleForm, type ScheduleMode } from "./ScheduleForm";
 
 interface Props {
   open: boolean;
@@ -39,6 +46,8 @@ export function CampaignBuilder({ open, onClose }: Props) {
     areas: [],
   });
   const [matching, setMatching] = useState<RecipientSummary[]>([]);
+  const [scheduleMode, setScheduleMode] = useState<ScheduleMode>("now");
+  const [schedule, setSchedule] = useState<CampaignSchedule | null>(null);
   const templates = useTemplateStore((s) => s.templates);
   const reloadCampaigns = useCampaignStore((s) => s.load);
 
@@ -51,6 +60,8 @@ export function CampaignBuilder({ open, onClose }: Props) {
       setSearch("");
       setFilters({ clientTypeIds: [], areas: [] });
       setMatching([]);
+      setScheduleMode("now");
+      setSchedule(null);
       return;
     }
     (async () => {
@@ -103,7 +114,7 @@ export function CampaignBuilder({ open, onClose }: Props) {
   const hasFilters =
     filters.clientTypeIds.length > 0 || filters.areas.length > 0;
 
-  const startSend = async (mode: "now" | "draft") => {
+  const startSend = async (mode: "submit" | "draft") => {
     if (!templateId || selected.size === 0) return;
     setSending(true);
     try {
@@ -113,20 +124,37 @@ export function CampaignBuilder({ open, onClose }: Props) {
         contact_ids: Array.from(selected),
       });
       // Persist filters alongside the campaign so the editor and the
-      // (forthcoming) scheduler can re-resolve them later.
+      // scheduler can re-resolve them later (recurring campaigns).
       if (hasFilters) {
         await window.api.campaigns.setFilters(campaign.id, filters);
       }
-      if (mode === "now") {
+
+      if (mode === "draft") {
+        toast({ title: "Draft saved", tone: "success" });
+      } else if (scheduleMode === "now") {
         await window.api.campaigns.send(campaign.id);
         toast({ title: "Campaign started", tone: "success" });
-      } else {
-        toast({ title: "Draft saved", tone: "success" });
+      } else if (schedule) {
+        const { next_run_at } = await window.api.campaigns.schedule(
+          campaign.id,
+          schedule
+        );
+        toast({
+          title: "Campaign scheduled",
+          description: next_run_at
+            ? `Next run: ${new Date(next_run_at).toLocaleString()}`
+            : undefined,
+          tone: "success",
+        });
       }
       reloadCampaigns();
       onClose();
     } catch (err: any) {
-      toast({ title: "Create failed", description: err.message, tone: "error" });
+      toast({
+        title: "Create failed",
+        description: err.message,
+        tone: "error",
+      });
     } finally {
       setSending(false);
     }
@@ -195,11 +223,15 @@ export function CampaignBuilder({ open, onClose }: Props) {
               </Button>
               <Button
                 variant="primary"
-                onClick={() => startSend("now")}
+                onClick={() => startSend("submit")}
                 loading={sending}
                 icon={<Send size={14} />}
               >
-                Send now ({selected.size})
+                {scheduleMode === "now"
+                  ? `Send now (${selected.size})`
+                  : scheduleMode === "one_off"
+                    ? "Schedule send"
+                    : "Schedule recurring"}
               </Button>
             </>
           )}
@@ -338,6 +370,10 @@ export function CampaignBuilder({ open, onClose }: Props) {
           contactIds={Array.from(selected)}
           name={name}
           setName={setName}
+          scheduleMode={scheduleMode}
+          schedule={schedule}
+          onScheduleModeChange={setScheduleMode}
+          onScheduleChange={setSchedule}
         />
       )}
     </Modal>
@@ -390,11 +426,19 @@ function CampaignReview({
   contactIds,
   name,
   setName,
+  scheduleMode,
+  schedule,
+  onScheduleModeChange,
+  onScheduleChange,
 }: {
   template: Template | null;
   contactIds: number[];
   name: string;
   setName: (v: string) => void;
+  scheduleMode: ScheduleMode;
+  schedule: CampaignSchedule | null;
+  onScheduleModeChange: (m: ScheduleMode) => void;
+  onScheduleChange: (s: CampaignSchedule | null) => void;
 }) {
   const [previews, setPreviews] = useState<
     Array<{
@@ -452,6 +496,18 @@ function CampaignReview({
                 ? template.merge_fields.map((f) => `{{${f}}}`).join(", ")
                 : "None"
             }
+          />
+        </div>
+
+        <div className="mt-4">
+          <div className="text-xs font-semibold uppercase tracking-wider text-fg-muted mb-2">
+            Delivery
+          </div>
+          <ScheduleForm
+            mode={scheduleMode}
+            onModeChange={onScheduleModeChange}
+            schedule={schedule}
+            onScheduleChange={onScheduleChange}
           />
         </div>
       </div>
