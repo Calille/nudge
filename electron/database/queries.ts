@@ -959,6 +959,36 @@ export function setCampaignLastRunAt(campaignId: number, lastRunAt: string) {
   );
 }
 
+// Used by the scheduler at each recurring run: clears previously-staged
+// campaign_emails for this campaign and re-inserts a fresh set for the
+// current recipient list, then resets the per-campaign counters.
+//
+// Trade-off: a recurring campaign's sent_count / failed_count reflect the
+// most recent run only — per-run history would need a separate runs table.
+export function materializeRecipientsForRun(
+  campaignId: number,
+  recipients: RecipientSummary[]
+) {
+  const db = getDb();
+  const txn = db.transaction(() => {
+    db.prepare("DELETE FROM campaign_emails WHERE campaign_id = ?").run(
+      campaignId
+    );
+    const ins = db.prepare(
+      `INSERT INTO campaign_emails
+         (campaign_id, contact_id, to_email, to_name, subject, body_html, body_text, status)
+       VALUES (?, ?, ?, ?, '', '', '', 'pending')`
+    );
+    for (const r of recipients) {
+      ins.run(campaignId, r.id, r.email, r.name);
+    }
+    db.prepare(
+      "UPDATE campaigns SET total_recipients = ?, sent_count = 0, failed_count = 0 WHERE id = ?"
+    ).run(recipients.length, campaignId);
+  });
+  txn();
+}
+
 export function listDueCampaigns(now: string): Campaign[] {
   const db = getDb();
   const rows = db

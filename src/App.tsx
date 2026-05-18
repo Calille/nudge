@@ -54,6 +54,22 @@ export default function App() {
     return () => window.removeEventListener("keydown", handler);
   }, [openCommand]);
 
+  // The scheduler runs in the main process; refresh visible state when it
+  // kicks off or finishes a recurring/one-off run so the user sees it.
+  useEffect(() => {
+    const offStart = window.api.campaigns.onScheduledRunStarted(() => {
+      loadCampaigns();
+    });
+    const offEnd = window.api.campaigns.onScheduledRunCompleted(() => {
+      loadCampaigns();
+      loadContacts();
+    });
+    return () => {
+      offStart();
+      offEnd();
+    };
+  }, [loadCampaigns, loadContacts]);
+
   return (
     <>
       {isFirstRun ? <WelcomeFlow /> : <AppShell />}

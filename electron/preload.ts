@@ -155,6 +155,29 @@ const api = {
       ipcRenderer.on("campaigns:progress", listener);
       return () => ipcRenderer.removeListener("campaigns:progress", listener);
     },
+    onScheduledRunStarted: (
+      callback: (e: { campaign_id: number; at: string }) => void
+    ) => {
+      const listener = (_e: unknown, payload: { campaign_id: number; at: string }) =>
+        callback(payload);
+      ipcRenderer.on("campaigns:scheduled-run-started", listener);
+      return () =>
+        ipcRenderer.removeListener("campaigns:scheduled-run-started", listener);
+    },
+    onScheduledRunCompleted: (
+      callback: (e: { campaign_id: number; completed_at: string }) => void
+    ) => {
+      const listener = (
+        _e: unknown,
+        payload: { campaign_id: number; completed_at: string }
+      ) => callback(payload);
+      ipcRenderer.on("campaigns:scheduled-run-completed", listener);
+      return () =>
+        ipcRenderer.removeListener(
+          "campaigns:scheduled-run-completed",
+          listener
+        );
+    },
     setFilters: (campaignId: number, filters: CampaignFilters) =>
       invoke<void>("campaigns:setFilters", campaignId, filters),
     getFilters: (campaignId: number) =>

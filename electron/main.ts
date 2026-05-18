@@ -9,6 +9,10 @@ import { registerCampaignHandlers } from "./ipc/campaigns";
 import { registerClientTypeHandlers } from "./ipc/clientTypes";
 import { registerSettingsHandlers } from "./ipc/settings";
 import { registerUtilHandlers } from "./ipc/utils";
+import {
+  startCampaignScheduler,
+  stopCampaignScheduler,
+} from "./services/campaign-scheduler";
 
 const isDev = !app.isPackaged;
 
@@ -65,6 +69,7 @@ app.setName("NudgeMail");
 app.whenReady().then(() => {
   initDatabase();
   registerAllIpc();
+  startCampaignScheduler();
 
   if (process.platform === "darwin") {
     Menu.setApplicationMenu(
@@ -91,5 +96,6 @@ app.on("window-all-closed", () => {
 });
 
 app.on("before-quit", () => {
+  stopCampaignScheduler();
   closeDatabase();
 });
