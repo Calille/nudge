@@ -46,7 +46,9 @@ async function runLoopbackFlow(): Promise<GmailTokens & { email: string; name?: 
         reject(new Error("Unable to start OAuth callback server"));
         return;
       }
-      const redirectUri = `http://127.0.0.1:${address.port}/oauth2callback`;
+      // Google accepts loopback redirects with any port for installed
+      // apps (see https://developers.google.com/identity/protocols/oauth2/native-app).
+      const redirectUri = `http://localhost:${address.port}/oauth2callback`;
       const oauth2 = createOAuth2Client(redirectUri);
       const authUrl = oauth2.generateAuthUrl({
         access_type: "offline",

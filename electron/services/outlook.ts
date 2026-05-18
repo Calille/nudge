@@ -58,7 +58,10 @@ async function runAuthCodeFlow(): Promise<{
         reject(new Error("Unable to start OAuth callback server"));
         return;
       }
-      const redirectUri = `http://127.0.0.1:${address.port}/oauth2callback`;
+      // Use `localhost` rather than 127.0.0.1 so Azure's public-client
+      // wildcard-port matching applies (register http://localhost in
+      // App registrations → Authentication → Mobile & desktop platform).
+      const redirectUri = `http://localhost:${address.port}/oauth2callback`;
       const authCodeUrl = await pca.getAuthCodeUrl({
         scopes: SCOPES,
         redirectUri,

@@ -1,5 +1,11 @@
-import { BrowserWindow, Menu, app, shell } from "electron";
+import { config as loadDotenv } from "dotenv";
 import path from "node:path";
+import { BrowserWindow, Menu, app, shell } from "electron";
+
+// Load .env from the app working directory in dev, or from the resources
+// folder once packaged. Must run before any service module touches
+// process.env (gmail.ts / outlook.ts read OAuth client IDs at call time).
+loadDotenv();
 import { initDatabase, closeDatabase } from "./database";
 import { registerContactHandlers } from "./ipc/contacts";
 import { registerClientHandlers } from "./ipc/clients";
