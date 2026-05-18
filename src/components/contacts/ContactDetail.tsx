@@ -5,10 +5,14 @@ import { Button } from "@/components/shared/Button";
 import { Input, Textarea } from "@/components/shared/Input";
 import { Badge } from "@/components/shared/Badge";
 import { TagInput } from "@/components/shared/TagInput";
+import { AreaSelect } from "@/components/shared/AreaSelect";
+import { ClientTypePicker } from "@/components/shared/ClientTypePicker";
 import { StaffAssignment } from "./StaffAssignment";
 import { useContactStore } from "@/stores/contactStore";
+import { useClientTypeStore } from "@/stores/clientTypeStore";
 import { toast } from "@/stores/uiStore";
 import type { ContactWithRelations } from "@/types";
+import type { UKCounty } from "@/lib/uk-counties";
 
 interface Props {
   open: boolean;
@@ -24,6 +28,7 @@ export function ContactDetail({ open, onClose, contactId }: Props) {
   const allTags = useContactStore((s) => s.allTags);
   const loadTags = useContactStore((s) => s.loadTags);
   const reloadList = useContactStore((s) => s.load);
+  const clientTypes = useClientTypeStore((s) => s.items);
 
   const load = async () => {
     if (contactId === null) return;
@@ -57,9 +62,14 @@ export function ContactDetail({ open, onClose, contactId }: Props) {
         role: contact.role,
         phone: contact.phone,
         notes: contact.notes,
+        area: contact.area,
         tags: contact.tags,
         is_active: contact.is_active,
       });
+      await window.api.contacts.setClientTypes(
+        contact.id,
+        contact.client_types.map((t) => t.id)
+      );
       toast({ title: "Contact saved", tone: "success" });
       reloadList();
       loadTags();
@@ -157,6 +167,28 @@ export function ContactDetail({ open, onClose, contactId }: Props) {
               </span>
             </div>
           </div>
+
+          <AreaSelect
+            value={(contact.area as UKCounty | null) ?? null}
+            onChange={(area) => setContact({ ...contact, area })}
+          />
+
+          <ClientTypePicker
+            label="Client types"
+            selectedIds={contact.client_types.map((t) => t.id)}
+            onChange={(ids) => {
+              const next = ids
+                .map((id) => clientTypes.find((t) => t.id === id))
+                .filter((t): t is (typeof clientTypes)[number] => Boolean(t))
+                .map((t) => ({
+                  id: t.id,
+                  name: t.name,
+                  colour: t.colour,
+                  created_at: t.created_at,
+                }));
+              setContact({ ...contact, client_types: next });
+            }}
+          />
 
           <div>
             <label className="block text-xs font-medium text-fg-muted mb-1.5">

@@ -3,8 +3,11 @@ import { Modal } from "@/components/shared/Modal";
 import { Button } from "@/components/shared/Button";
 import { Input, Textarea } from "@/components/shared/Input";
 import { TagInput } from "@/components/shared/TagInput";
+import { AreaSelect } from "@/components/shared/AreaSelect";
+import { ClientTypePicker } from "@/components/shared/ClientTypePicker";
 import { useContactStore } from "@/stores/contactStore";
 import { toast } from "@/stores/uiStore";
+import type { UKCounty } from "@/lib/uk-counties";
 
 interface Props {
   open: boolean;
@@ -18,6 +21,8 @@ export function ContactCreateModal({ open, onClose }: Props) {
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
   const [clientName, setClientName] = useState("");
+  const [area, setArea] = useState<UKCounty | null>(null);
+  const [clientTypeIds, setClientTypeIds] = useState<number[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const loadList = useContactStore((s) => s.load);
@@ -32,6 +37,8 @@ export function ContactCreateModal({ open, onClose }: Props) {
     setPhone("");
     setNotes("");
     setClientName("");
+    setArea(null);
+    setClientTypeIds([]);
     setTags([]);
   };
 
@@ -55,16 +62,20 @@ export function ContactCreateModal({ open, onClose }: Props) {
           // existing clients only.
         }
       }
-      await window.api.contacts.create({
+      const created = await window.api.contacts.create({
         client_id: clientId,
         name: name.trim(),
         email: email.trim().toLowerCase(),
         role: role.trim() || null,
         phone: phone.trim() || null,
         notes: notes.trim() || null,
+        area,
         tags,
         is_active: 1,
-      } as any);
+      });
+      if (clientTypeIds.length > 0) {
+        await window.api.contacts.setClientTypes(created.id, clientTypeIds);
+      }
       toast({ title: "Contact created", tone: "success" });
       reset();
       onClose();
@@ -135,6 +146,12 @@ export function ContactCreateModal({ open, onClose }: Props) {
             ))}
           </datalist>
         </div>
+        <AreaSelect value={area} onChange={setArea} />
+        <ClientTypePicker
+          label="Client types"
+          selectedIds={clientTypeIds}
+          onChange={setClientTypeIds}
+        />
         <div>
           <label className="block text-xs font-medium text-fg-muted mb-1.5">
             Tags

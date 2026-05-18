@@ -31,6 +31,7 @@ export interface Contact {
   role: string | null;
   phone: string | null;
   notes: string | null;
+  area: string | null;
   tags: string[];
   is_active: number;
   last_emailed_at?: string | null;
@@ -41,6 +42,7 @@ export interface Contact {
 export interface ContactWithRelations extends Contact {
   client: Client | null;
   staff: StaffAssignment[];
+  client_types: ClientType[];
 }
 
 export interface StaffAssignment extends Staff {

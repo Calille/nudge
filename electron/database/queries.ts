@@ -36,6 +36,7 @@ function mapContact(row: any): Contact {
     role: row.role,
     phone: row.phone,
     notes: row.notes,
+    area: row.area ?? null,
     tags: safeJson<string[]>(row.tags, []),
     is_active: row.is_active,
     last_emailed_at: row.last_emailed_at,
@@ -397,7 +398,8 @@ export function getContactById(id: number): ContactWithRelations {
     ...mapStaff(r),
     assignment_notes: r.assignment_notes ?? null,
   }));
-  return { ...contact, client, staff };
+  const client_types = getClientTypesForContact(id);
+  return { ...contact, client, staff, client_types };
 }
 
 export function createContact(data: {
@@ -407,6 +409,7 @@ export function createContact(data: {
   role?: string | null;
   phone?: string | null;
   notes?: string | null;
+  area?: string | null;
   tags?: string[];
   is_active?: number;
 }): Contact {
@@ -417,8 +420,8 @@ export function createContact(data: {
   if (existing) throw new Error("A contact with that email already exists");
   const info = db
     .prepare(
-      `INSERT INTO contacts (client_id, name, email, role, phone, notes, tags, is_active)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO contacts (client_id, name, email, role, phone, notes, area, tags, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       data.client_id,
@@ -427,6 +430,7 @@ export function createContact(data: {
       data.role ?? null,
       data.phone ?? null,
       data.notes ?? null,
+      data.area ?? null,
       JSON.stringify(data.tags ?? []),
       data.is_active ?? 1
     );
@@ -439,7 +443,7 @@ export function updateContact(id: number, data: Partial<Contact>): Contact {
   const merged: Contact = { ...existing, ...data };
   db.prepare(
     `UPDATE contacts
-     SET client_id = ?, name = ?, email = ?, role = ?, phone = ?, notes = ?, tags = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP
+     SET client_id = ?, name = ?, email = ?, role = ?, phone = ?, notes = ?, area = ?, tags = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP
      WHERE id = ?`
   ).run(
     merged.client_id,
@@ -448,6 +452,7 @@ export function updateContact(id: number, data: Partial<Contact>): Contact {
     merged.role,
     merged.phone,
     merged.notes,
+    merged.area ?? null,
     JSON.stringify(merged.tags ?? []),
     merged.is_active,
     id
