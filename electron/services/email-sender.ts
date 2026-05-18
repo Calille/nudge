@@ -48,12 +48,22 @@ export async function sendEmail(
       })()
     : requireDefaultAccount();
 
+  // Drop replyTo if it's whitespace or doesn't look like an email — Microsoft
+  // Graph rejects sendMail with ErrorParticipantDoesntHaveAnEmailAddress
+  // when ReplyTo[].address is empty/invalid. Cheaper to normalise here
+  // than to lose the send to a 400.
+  const normalisedReplyTo = (() => {
+    const v = payload.replyTo?.trim();
+    if (!v) return undefined;
+    return v.includes("@") ? v : undefined;
+  })();
+
   const basePayload = {
     from: account.email,
     fromName: opts.fromName ?? account.display_name ?? null,
     to: payload.to.email,
     toName: payload.to.name ?? null,
-    replyTo: payload.replyTo,
+    replyTo: normalisedReplyTo,
     subject: payload.subject,
     html: payload.html,
     text: payload.text,
