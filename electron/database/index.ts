@@ -2,7 +2,12 @@ import Database from "better-sqlite3";
 import { app } from "electron";
 import fs from "node:fs";
 import path from "node:path";
-import { CURRENT_SCHEMA_VERSION, SCHEMA_STATEMENTS } from "./schema";
+import {
+  BASELINE_SCHEMA_VERSION,
+  CURRENT_SCHEMA_VERSION,
+  SCHEMA_STATEMENTS,
+} from "./schema";
+import { getCurrentSchemaVersion, runPendingMigrations } from "./migrations";
 
 let dbInstance: Database.Database | null = null;
 
@@ -54,29 +59,28 @@ export function initDatabase(): Database.Database {
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
 
-  db.exec("BEGIN");
-  try {
+  // Apply the v1 baseline (idempotent via IF NOT EXISTS). Schema versions
+  // beyond 1 are handled exclusively by the migrations runner below.
+  const baseline = db.transaction(() => {
     for (const stmt of SCHEMA_STATEMENTS) db.exec(stmt);
-
     const versionRow = db
       .prepare("SELECT version FROM schema_version LIMIT 1")
       .get() as { version: number } | undefined;
-
     if (!versionRow) {
       db.prepare("INSERT INTO schema_version (version) VALUES (?)").run(
-        CURRENT_SCHEMA_VERSION
-      );
-    } else if (versionRow.version < CURRENT_SCHEMA_VERSION) {
-      // Placeholder for future migrations — each migration should be idempotent.
-      db.prepare("UPDATE schema_version SET version = ?").run(
-        CURRENT_SCHEMA_VERSION
+        BASELINE_SCHEMA_VERSION
       );
     }
+  });
+  baseline();
 
-    db.exec("COMMIT");
-  } catch (err) {
-    db.exec("ROLLBACK");
-    throw err;
+  runPendingMigrations(db);
+
+  const finalVersion = getCurrentSchemaVersion(db);
+  if (finalVersion !== CURRENT_SCHEMA_VERSION) {
+    throw new Error(
+      `[db] expected schema v${CURRENT_SCHEMA_VERSION} after boot, got v${finalVersion}`
+    );
   }
 
   dbInstance = db;

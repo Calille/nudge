@@ -134,4 +134,9 @@ export const SCHEMA_STATEMENTS: string[] = [
   );`,
 ];
 
-export const CURRENT_SCHEMA_VERSION = 1;
+export const CURRENT_SCHEMA_VERSION = 2;
+
+// The baseline (above) represents v1 of the schema. Every change beyond
+// that lives in its own file under ./migrations and is applied on boot
+// after the baseline is created. See ./migrations/index.ts.
+export const BASELINE_SCHEMA_VERSION = 1;
