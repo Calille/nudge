@@ -1,10 +1,35 @@
 import { resolve } from "node:path";
 import { defineConfig, externalizeDepsPlugin } from "electron-vite";
 import react from "@vitejs/plugin-react";
+import "dotenv/config";
+
+// Vite replaces these expressions in the bundled main code at build time
+// (string replacement, before tree-shaking). Empty string fallbacks mean
+// the packaged app simply tells the user "Outlook OAuth not configured"
+// when the build was produced without .env populated, rather than crashing.
+//
+// In dev (electron-vite dev) main.ts still calls dotenv.config() at boot,
+// so the runtime read works the same way. In production the values are
+// already inlined, so process.env is never actually read.
+const credentialDefines = {
+  "process.env.MS_OAUTH_CLIENT_ID": JSON.stringify(
+    process.env.MS_OAUTH_CLIENT_ID ?? ""
+  ),
+  "process.env.MS_OAUTH_TENANT_ID": JSON.stringify(
+    process.env.MS_OAUTH_TENANT_ID ?? "common"
+  ),
+  "process.env.GOOGLE_OAUTH_CLIENT_ID": JSON.stringify(
+    process.env.GOOGLE_OAUTH_CLIENT_ID ?? ""
+  ),
+  "process.env.GOOGLE_OAUTH_CLIENT_SECRET": JSON.stringify(
+    process.env.GOOGLE_OAUTH_CLIENT_SECRET ?? ""
+  ),
+};
 
 export default defineConfig({
   main: {
     plugins: [externalizeDepsPlugin()],
+    define: credentialDefines,
     build: {
       outDir: "dist-electron/main",
       rollupOptions: {
