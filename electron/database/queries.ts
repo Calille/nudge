@@ -3,9 +3,12 @@ import type {
   Campaign,
   CampaignEmail,
   Client,
+  ClientType,
+  ClientTypeWithUsage,
   Contact,
   ContactFilters,
   ContactWithRelations,
+  CreateClientType,
   EmailAccount,
   PaginatedResult,
   Staff,
@@ -165,6 +168,121 @@ export function updateClient(id: number, data: Partial<Client>) {
     `UPDATE clients SET name = ?, notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
   ).run(merged.name, merged.notes, id);
   return db.prepare("SELECT * FROM clients WHERE id = ?").get(id) as Client;
+}
+
+// -------------------- CLIENT TYPES --------------------
+
+function mapClientType(row: any): ClientType {
+  return {
+    id: row.id,
+    name: row.name,
+    colour: row.colour,
+    created_at: row.created_at,
+  };
+}
+
+export function listClientTypes(): ClientTypeWithUsage[] {
+  const db = getDb();
+  const rows = db
+    .prepare(
+      `SELECT ct.*, (
+         SELECT COUNT(*) FROM contact_client_types cct WHERE cct.client_type_id = ct.id
+       ) AS contact_count
+       FROM client_types ct
+       ORDER BY ct.name COLLATE NOCASE ASC`
+    )
+    .all() as any[];
+  return rows.map((r) => ({ ...mapClientType(r), contact_count: r.contact_count }));
+}
+
+export function getClientType(id: number): ClientType {
+  const db = getDb();
+  const row = db.prepare("SELECT * FROM client_types WHERE id = ?").get(id);
+  if (!row) throw new Error("Client type not found");
+  return mapClientType(row);
+}
+
+export function getClientTypeContactCount(id: number): number {
+  const db = getDb();
+  const row = db
+    .prepare(
+      "SELECT COUNT(*) AS c FROM contact_client_types WHERE client_type_id = ?"
+    )
+    .get(id) as { c: number };
+  return row.c;
+}
+
+export function createClientType(data: CreateClientType): ClientType {
+  const db = getDb();
+  const clean = data.name.trim();
+  if (!clean) throw new Error("Client type name is required");
+  const info = db
+    .prepare("INSERT INTO client_types (name, colour) VALUES (?, ?)")
+    .run(clean, data.colour ?? null);
+  return getClientType(Number(info.lastInsertRowid));
+}
+
+export function updateClientType(
+  id: number,
+  data: Partial<CreateClientType>
+): ClientType {
+  const db = getDb();
+  const existing = getClientType(id);
+  const merged = { ...existing, ...data };
+  const cleanName = merged.name.trim();
+  if (!cleanName) throw new Error("Client type name is required");
+  db.prepare("UPDATE client_types SET name = ?, colour = ? WHERE id = ?").run(
+    cleanName,
+    merged.colour ?? null,
+    id
+  );
+  return getClientType(id);
+}
+
+export function deleteClientType(id: number): { affected_contacts: number } {
+  const db = getDb();
+  const affected = getClientTypeContactCount(id);
+  db.prepare("DELETE FROM client_types WHERE id = ?").run(id);
+  return { affected_contacts: affected };
+}
+
+export function getClientTypesForContact(contactId: number): ClientType[] {
+  const db = getDb();
+  const rows = db
+    .prepare(
+      `SELECT ct.* FROM client_types ct
+       JOIN contact_client_types cct ON cct.client_type_id = ct.id
+       WHERE cct.contact_id = ?
+       ORDER BY ct.name COLLATE NOCASE ASC`
+    )
+    .all(contactId) as any[];
+  return rows.map(mapClientType);
+}
+
+export function findClientTypeByName(name: string): ClientType | null {
+  const db = getDb();
+  const row = db
+    .prepare("SELECT * FROM client_types WHERE name = ? COLLATE NOCASE")
+    .get(name.trim());
+  return row ? mapClientType(row) : null;
+}
+
+export function setContactClientTypes(
+  contactId: number,
+  clientTypeIds: number[]
+) {
+  const db = getDb();
+  const txn = db.transaction(() => {
+    db.prepare(
+      "DELETE FROM contact_client_types WHERE contact_id = ?"
+    ).run(contactId);
+    const ins = db.prepare(
+      "INSERT OR IGNORE INTO contact_client_types (contact_id, client_type_id) VALUES (?, ?)"
+    );
+    for (const tid of clientTypeIds) ins.run(contactId, tid);
+    touchContact(db, contactId);
+  });
+  txn();
 }
 
 // -------------------- CONTACTS --------------------

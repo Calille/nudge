@@ -6,6 +6,7 @@ import { registerClientHandlers } from "./ipc/clients";
 import { registerStaffHandlers } from "./ipc/staff";
 import { registerTemplateHandlers } from "./ipc/templates";
 import { registerCampaignHandlers } from "./ipc/campaigns";
+import { registerClientTypeHandlers } from "./ipc/clientTypes";
 import { registerSettingsHandlers } from "./ipc/settings";
 import { registerUtilHandlers } from "./ipc/utils";
 
@@ -17,6 +18,7 @@ function registerAllIpc() {
   registerStaffHandlers();
   registerTemplateHandlers();
   registerCampaignHandlers();
+  registerClientTypeHandlers();
   registerSettingsHandlers();
   registerUtilHandlers();
 }

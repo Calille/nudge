@@ -6,6 +6,22 @@ export interface Client {
   updated_at: string;
 }
 
+export interface ClientType {
+  id: number;
+  name: string;
+  colour: string | null;
+  created_at: string;
+}
+
+export interface ClientTypeWithUsage extends ClientType {
+  contact_count: number;
+}
+
+export interface CreateClientType {
+  name: string;
+  colour?: string | null;
+}
+
 export interface Contact {
   id: number;
   client_id: number | null;

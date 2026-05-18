@@ -5,6 +5,7 @@ import { useSettingsStore } from "@/stores/settingsStore";
 import { useContactStore } from "@/stores/contactStore";
 import { useTemplateStore } from "@/stores/templateStore";
 import { useCampaignStore } from "@/stores/campaignStore";
+import { useClientTypeStore } from "@/stores/clientTypeStore";
 import { ToastContainer } from "@/components/shared/Toast";
 import { CommandPalette } from "@/components/shared/CommandPalette";
 import { useUIStore } from "@/stores/uiStore";
@@ -16,6 +17,7 @@ export default function App() {
   const loadTags = useContactStore((s) => s.loadTags);
   const loadTemplates = useTemplateStore((s) => s.load);
   const loadCampaigns = useCampaignStore((s) => s.load);
+  const loadClientTypes = useClientTypeStore((s) => s.load);
   const isFirstRun = useSettingsStore((s) => s.isFirstRun);
   const openCommand = useUIStore((s) => s.openCommand);
 
@@ -28,9 +30,18 @@ export default function App() {
         loadTags(),
         loadTemplates(),
         loadCampaigns(),
+        loadClientTypes(),
       ]);
     })();
-  }, [loadSettings, loadContacts, loadClients, loadTags, loadTemplates, loadCampaigns]);
+  }, [
+    loadSettings,
+    loadContacts,
+    loadClients,
+    loadTags,
+    loadTemplates,
+    loadCampaigns,
+    loadClientTypes,
+  ]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {

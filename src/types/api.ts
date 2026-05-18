@@ -2,12 +2,15 @@ import type {
   Campaign,
   CampaignWithEmails,
   Client,
+  ClientType,
+  ClientTypeWithUsage,
   ClientWithContacts,
   ColumnMapping,
   Contact,
   ContactFilters,
   ContactWithRelations,
   CreateCampaign,
+  CreateClientType,
   CreateStaff,
   CreateTemplate,
   EmailAccount,
@@ -40,6 +43,15 @@ export interface NudgeMailAPI {
     delete(ids: number[]): Promise<void>;
     bulkTag(ids: number[], tags: string[], action: "add" | "remove"): Promise<void>;
     allTags(): Promise<string[]>;
+    setClientTypes(contactId: number, clientTypeIds: number[]): Promise<void>;
+  };
+
+  clientTypes: {
+    list(): Promise<ClientTypeWithUsage[]>;
+    create(data: CreateClientType): Promise<ClientType>;
+    update(id: number, data: Partial<CreateClientType>): Promise<ClientType>;
+    affectedCount(id: number): Promise<number>;
+    delete(id: number): Promise<{ affected_contacts: number }>;
   };
 
   clients: {

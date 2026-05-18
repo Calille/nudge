@@ -9,3 +9,4 @@ release
 .vscode/*
 !.vscode/extensions.json
 build/icon.*
+tsconfig.*.tsbuildinfo

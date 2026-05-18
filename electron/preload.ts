@@ -3,12 +3,15 @@ import type {
   Campaign,
   CampaignWithEmails,
   Client,
+  ClientType,
+  ClientTypeWithUsage,
   ClientWithContacts,
   ColumnMapping,
   Contact,
   ContactFilters,
   ContactWithRelations,
   CreateCampaign,
+  CreateClientType,
   CreateStaff,
   CreateTemplate,
   EmailAccount,
@@ -65,6 +68,19 @@ const api = {
     bulkTag: (ids: number[], tags: string[], action: "add" | "remove") =>
       invoke<void>("contacts:bulk-tag", ids, tags, action),
     allTags: () => invoke<string[]>("contacts:all-tags"),
+    setClientTypes: (contactId: number, clientTypeIds: number[]) =>
+      invoke<void>("contacts:setClientTypes", contactId, clientTypeIds),
+  },
+  clientTypes: {
+    list: () => invoke<ClientTypeWithUsage[]>("clientTypes:list"),
+    create: (data: CreateClientType) =>
+      invoke<ClientType>("clientTypes:create", data),
+    update: (id: number, data: Partial<CreateClientType>) =>
+      invoke<ClientType>("clientTypes:update", id, data),
+    affectedCount: (id: number) =>
+      invoke<number>("clientTypes:affectedCount", id),
+    delete: (id: number) =>
+      invoke<{ affected_contacts: number }>("clientTypes:delete", id),
   },
   clients: {
     getAll: () =>
