@@ -6,7 +6,6 @@ import {
   setSetting,
 } from "../database/queries";
 import { registerHandler } from "./helpers";
-import { connectGmailAccount } from "../services/gmail";
 import { connectOutlookAccount } from "../services/outlook";
 import { connectSmtpAccount, testSmtp } from "../services/smtp";
 import {
@@ -18,9 +17,6 @@ import type { SenderDefaults } from "../../src/types";
 const FIRST_RUN_KEY = "first_run_complete";
 
 export function registerSettingsHandlers() {
-  registerHandler("settings:connect-gmail", async () =>
-    connectGmailAccount()
-  );
   registerHandler("settings:connect-outlook", async () =>
     connectOutlookAccount()
   );

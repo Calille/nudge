@@ -3,7 +3,6 @@ import {
   getEmailAccount,
   getEmailAccountFull,
 } from "../database/queries";
-import { sendViaGmail } from "./gmail";
 import { sendViaOutlook } from "./outlook";
 import { sendViaSmtp } from "./smtp";
 
@@ -27,7 +26,7 @@ export function requireDefaultAccount() {
   const acc = getDefaultEmailAccountFull();
   if (!acc) {
     throw new Error(
-      "No email account connected. Connect Gmail, Outlook or SMTP in Settings first."
+      "No email account connected. Connect Outlook or SMTP in Settings first."
     );
   }
   return acc;
@@ -72,9 +71,7 @@ export async function sendEmail(
 
   try {
     let result: { messageId?: string };
-    if (account.provider === "gmail") {
-      result = await sendViaGmail(account.id, basePayload);
-    } else if (account.provider === "outlook") {
+    if (account.provider === "outlook") {
       result = await sendViaOutlook(account.id, basePayload);
     } else if (account.provider === "smtp") {
       result = await sendViaSmtp(account.id, basePayload);

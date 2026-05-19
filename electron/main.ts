@@ -4,7 +4,7 @@ import { BrowserWindow, Menu, app, shell } from "electron";
 
 // Load .env from the app working directory in dev, or from the resources
 // folder once packaged. Must run before any service module touches
-// process.env (gmail.ts / outlook.ts read OAuth client IDs at call time).
+// process.env (outlook.ts reads OAuth client IDs at call time).
 loadDotenv();
 import { initDatabase, closeDatabase } from "./database";
 import { registerContactHandlers } from "./ipc/contacts";

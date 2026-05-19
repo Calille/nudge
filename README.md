@@ -1,6 +1,6 @@
 # NudgeMail
 
-An internal-use Electron desktop application for managing contacts, building HTML marketing emails with merge fields, and sending them via Gmail or Outlook.
+An internal-use Electron desktop application for managing contacts, building HTML marketing emails with merge fields, and sending them via Outlook (Microsoft Graph) or any SMTP provider.
 
 ## Tech Stack
 
@@ -10,7 +10,7 @@ An internal-use Electron desktop application for managing contacts, building HTM
 - **Zustand** for state management
 - **better-sqlite3** local database
 - **SheetJS (xlsx)** for spreadsheet import
-- **Nodemailer + googleapis + @azure/msal-node** for sending
+- **Nodemailer + @azure/msal-node** for sending
 - **MJML** for responsive email compilation
 - **TipTap** WYSIWYG editor
 - **Framer Motion** for animations
@@ -48,13 +48,11 @@ release/               Packaged installers (generated)
 
 ## Configuration
 
-OAuth client credentials for Gmail and Outlook should be provided via environment variables at build/runtime:
+OAuth client credentials for Outlook should be provided via environment variables at build/runtime:
 
 ```
-GOOGLE_OAUTH_CLIENT_ID=...
-GOOGLE_OAUTH_CLIENT_SECRET=...
 MS_OAUTH_CLIENT_ID=...
-MS_OAUTH_TENANT_ID=common
+MS_OAUTH_TENANT_ID=...  # your tenant GUID, or `common` for multi-tenant apps
 ```
 
 Tokens are stored encrypted via Electron's `safeStorage` API. SMTP credentials offer a fallback for accounts where OAuth is not practical.
@@ -63,7 +61,7 @@ Tokens are stored encrypted via Electron's `safeStorage` API. SMTP credentials o
 
 On first launch, NudgeMail presents a three-step welcome flow:
 
-1. Connect Gmail or Outlook (or skip to configure later)
+1. Connect Outlook (or skip to configure later)
 2. Set sender defaults (display name, company, signature)
 3. Import your first contact spreadsheet (or skip)
 

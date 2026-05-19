@@ -107,14 +107,13 @@ function Divider() {
 }
 
 function AccountsStep({ onNext }: { onNext: () => void }) {
-  const [connecting, setConnecting] = useState<"gmail" | "outlook" | null>(null);
+  const [connecting, setConnecting] = useState<"outlook" | null>(null);
   const reload = useSettingsStore((s) => s.load);
 
-  const connect = async (which: "gmail" | "outlook") => {
-    setConnecting(which);
+  const connectOutlook = async () => {
+    setConnecting("outlook");
     try {
-      if (which === "gmail") await window.api.settings.connectGmail();
-      else await window.api.settings.connectOutlook();
+      await window.api.settings.connectOutlook();
       toast({ title: "Connected", tone: "success" });
       reload();
       onNext();
@@ -136,20 +135,12 @@ function AccountsStep({ onNext }: { onNext: () => void }) {
           connect later in Settings.
         </p>
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <Button
-          size="lg"
-          variant="secondary"
-          loading={connecting === "gmail"}
-          onClick={() => connect("gmail")}
-        >
-          Connect Gmail
-        </Button>
+      <div>
         <Button
           size="lg"
           variant="secondary"
           loading={connecting === "outlook"}
-          onClick={() => connect("outlook")}
+          onClick={connectOutlook}
         >
           Connect Outlook
         </Button>

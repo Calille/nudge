@@ -120,7 +120,6 @@ export interface NudgeMailAPI {
   };
 
   settings: {
-    connectGmail(): Promise<EmailAccount>;
     connectOutlook(): Promise<EmailAccount>;
     connectSmtp(config: {
       email: string;

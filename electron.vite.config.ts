@@ -18,12 +18,6 @@ const credentialDefines = {
   "process.env.MS_OAUTH_TENANT_ID": JSON.stringify(
     process.env.MS_OAUTH_TENANT_ID ?? "common"
   ),
-  "process.env.GOOGLE_OAUTH_CLIENT_ID": JSON.stringify(
-    process.env.GOOGLE_OAUTH_CLIENT_ID ?? ""
-  ),
-  "process.env.GOOGLE_OAUTH_CLIENT_SECRET": JSON.stringify(
-    process.env.GOOGLE_OAUTH_CLIENT_SECRET ?? ""
-  ),
 };
 
 export default defineConfig({

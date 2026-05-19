@@ -11,25 +11,12 @@ import { toast } from "@/stores/uiStore";
 export function EmailAccountSetup() {
   const accounts = useSettingsStore((s) => s.accounts);
   const reload = useSettingsStore((s) => s.load);
-  const [connecting, setConnecting] = useState<"gmail" | "outlook" | null>(null);
+  const [connecting, setConnecting] = useState<"outlook" | null>(null);
   const [smtpOpen, setSmtpOpen] = useState(false);
 
   useEffect(() => {
     reload();
   }, [reload]);
-
-  const connectGmail = async () => {
-    setConnecting("gmail");
-    try {
-      await window.api.settings.connectGmail();
-      toast({ title: "Gmail connected", tone: "success" });
-      reload();
-    } catch (err: any) {
-      toast({ title: "Gmail connect failed", description: err.message, tone: "error" });
-    } finally {
-      setConnecting(null);
-    }
-  };
 
   const connectOutlook = async () => {
     setConnecting("outlook");
@@ -68,19 +55,12 @@ export function EmailAccountSetup() {
       <div>
         <h2 className="text-base font-semibold">Connect an email account</h2>
         <p className="text-sm text-fg-muted mt-1">
-          NudgeMail sends all campaigns through an account you connect. OAuth is
-          preferred; SMTP is available as a fallback.
+          NudgeMail sends all campaigns through an account you connect.
+          Outlook OAuth is preferred; SMTP is available as a fallback.
         </p>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
-        <ProviderCard
-          title="Gmail"
-          description="Google OAuth2 · gmail.send scope"
-          onClick={connectGmail}
-          loading={connecting === "gmail"}
-          icon={<Mail size={18} className="text-accent" />}
-        />
+      <div className="grid grid-cols-2 gap-3">
         <ProviderCard
           title="Outlook"
           description="Microsoft Graph · Mail.Send"

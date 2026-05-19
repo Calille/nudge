@@ -187,7 +187,7 @@ export interface CampaignPreview {
 
 export interface EmailAccount {
   id: number;
-  provider: "gmail" | "outlook" | "smtp";
+  provider: "outlook" | "smtp";
   email: string;
   display_name: string | null;
   is_default: number;

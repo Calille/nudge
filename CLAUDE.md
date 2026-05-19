@@ -7,7 +7,7 @@ edit it when patterns change — it's loaded into context every session.
 
 NudgeMail is an internal-use Electron desktop app for managing contacts
 (grouped by client + assigned staff + client type) and sending merge-field
-email campaigns via Gmail OAuth, Outlook OAuth, or SMTP fallback.
+email campaigns via Outlook (Microsoft Graph) or any SMTP provider.
 
 - Electron 33 + electron-vite (main / preload / renderer bundled separately)
 - React 18 + TypeScript 5.7 strict; Tailwind v3 dark-only; Zustand stores

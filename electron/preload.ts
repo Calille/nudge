@@ -181,7 +181,6 @@ const api = {
       ),
   },
   settings: {
-    connectGmail: () => invoke<EmailAccount>("settings:connect-gmail"),
     connectOutlook: () => invoke<EmailAccount>("settings:connect-outlook"),
     connectSmtp: (config: any) =>
       invoke<EmailAccount>("settings:connect-smtp", config),
