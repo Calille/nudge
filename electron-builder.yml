@@ -9,12 +9,14 @@ directories:
 files:
   - "dist-electron/**/*"
   - "dist/**/*"
+  - "build/icon.png"
   - "package.json"
   - "!node_modules/*/{test,__tests__,docs,example,examples}/**/*"
 win:
   target:
     - target: nsis
       arch: [x64]
+  icon: build/icon.ico
 mac:
   target:
     - target: dmg

@@ -1,4 +1,5 @@
 import { config as loadDotenv } from "dotenv";
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { BrowserWindow, Menu, app, shell } from "electron";
 
@@ -33,6 +34,16 @@ function registerAllIpc() {
   registerUtilHandlers();
 }
 
+// Locate the window icon next to the bundled main. In dev __dirname is
+// <project>/dist-electron/main/; in production it's <app.asar>/dist-electron/main/.
+// Either way the build/ folder sits two levels up. Falls back to no icon
+// rather than crashing if the file is missing for some reason — Windows
+// also reads the icon resource from the .exe directly.
+function windowIconPath(): string | undefined {
+  const candidate = path.join(__dirname, "../../build/icon.png");
+  return existsSync(candidate) ? candidate : undefined;
+}
+
 function createMainWindow(): BrowserWindow {
   const win = new BrowserWindow({
     width: 1440,
@@ -41,6 +52,7 @@ function createMainWindow(): BrowserWindow {
     minHeight: 640,
     backgroundColor: "#0A0A0B",
     title: "NudgeMail",
+    icon: windowIconPath(),
     autoHideMenuBar: true,
     titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "default",
     trafficLightPosition: { x: 14, y: 14 },

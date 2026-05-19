@@ -17,6 +17,7 @@
     "dist:mac": "electron-vite build && electron-builder --mac",
     "dist:linux": "electron-vite build && electron-builder --linux",
     "typecheck": "tsc --noEmit",
+    "build:icons": "node scripts/build-icons.mjs",
     "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
@@ -58,7 +59,9 @@
     "electron-builder": "^25.1.8",
     "electron-vite": "^2.3.0",
     "postcss": "^8.4.49",
+    "sharp": "^0.34.5",
     "tailwindcss": "^3.4.17",
+    "to-ico": "^1.1.5",
     "typescript": "^5.7.2",
     "vite": "^5.4.11"
   },

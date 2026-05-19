@@ -1,0 +1,20 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background tile -->
+  <rect x="0" y="0" width="1024" height="1024" rx="205" fill="#0a0a0b"/>
+
+  <!-- N letterform, scaled up from the 160x160 design -->
+  <!-- Original positions in 160 box: verticals at x=40 and x=98, width 22, y=36-124 (height 88) -->
+  <!-- Scale factor: 1024/160 = 6.4, with the N centered in the tile -->
+
+  <!-- Left vertical -->
+  <rect x="256" y="230" width="141" height="563" rx="26" fill="#f5f5f7"/>
+
+  <!-- Right vertical -->
+  <rect x="627" y="230" width="141" height="563" rx="26" fill="#f5f5f7"/>
+
+  <!-- Diagonal stroke -->
+  <path d="M 397 230 L 538 230 L 768 793 L 627 793 Z" fill="#f5f5f7"/>
+
+  <!-- Accent nudge block -->
+  <rect x="678" y="678" width="179" height="179" rx="38" fill="#6366f1"/>
+</svg>
