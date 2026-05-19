@@ -445,7 +445,7 @@ export function TemplateEditorModal({ open, onClose, templateId }: Props) {
           </div>
 
           {missingFields.length > 0 && (
-            <div className="px-4 py-2 border-b border-warning/30 bg-warning/5 text-xs text-[#FCD34D] flex items-center gap-2">
+            <div className="px-4 py-2 border-b border-warning/30 bg-warning/5 text-xs text-warning flex items-center gap-2">
               <span className="font-medium">Missing data:</span>
               {missingFields.map((f) => (
                 <Badge tone="warning" key={f}>

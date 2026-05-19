@@ -1,5 +1,11 @@
 import type { Config } from "tailwindcss";
 
+// Token values come from CSS variables defined in src/styles/globals.css
+// for both light (:root) and dark (.dark) palettes. Using the
+// `rgb(var(--x) / <alpha-value>)` form preserves Tailwind's /alpha
+// modifier syntax, so e.g. `bg-accent/15` still works.
+const rgb = (variable: string) => `rgb(var(--${variable}) / <alpha-value>)`;
+
 const config: Config = {
   content: ["./index.html", "./src/**/*.{ts,tsx,js,jsx}"],
   darkMode: "class",
@@ -7,28 +13,28 @@ const config: Config = {
     extend: {
       colors: {
         bg: {
-          DEFAULT: "#0A0A0B",
-          elevated: "#111113",
-          subtle: "#0E0E10",
-          hover: "#17171A",
+          DEFAULT: rgb("bg"),
+          elevated: rgb("bg-elevated"),
+          subtle: rgb("bg-subtle"),
+          hover: rgb("bg-hover"),
         },
         border: {
-          DEFAULT: "#1E1E22",
-          strong: "#2A2A30",
+          DEFAULT: rgb("border"),
+          strong: rgb("border-strong"),
         },
         fg: {
-          DEFAULT: "#EDEDEF",
-          muted: "#7A7A80",
-          subtle: "#52525A",
+          DEFAULT: rgb("fg"),
+          muted: rgb("fg-muted"),
+          subtle: rgb("fg-subtle"),
         },
         accent: {
-          DEFAULT: "#3B82F6",
-          hover: "#2563EB",
-          subtle: "rgba(59,130,246,0.12)",
+          DEFAULT: rgb("accent"),
+          hover: rgb("accent-hover"),
+          subtle: "rgb(var(--accent) / 0.12)",
         },
-        success: "#22C55E",
-        warning: "#F59E0B",
-        danger: "#EF4444",
+        success: rgb("success"),
+        warning: rgb("warning"),
+        danger: rgb("danger"),
       },
       fontFamily: {
         sans: [
@@ -56,9 +62,9 @@ const config: Config = {
         xl: "12px",
       },
       boxShadow: {
-        ring: "0 0 0 1px rgba(255,255,255,0.05)",
-        focus: "0 0 0 2px rgba(59,130,246,0.35)",
-        panel: "0 20px 60px -20px rgba(0,0,0,0.8)",
+        ring: "var(--shadow-ring)",
+        focus: "0 0 0 2px rgb(var(--accent) / 0.35)",
+        panel: "var(--shadow-panel)",
       },
       animation: {
         "fade-in": "fadeIn 180ms ease-out",

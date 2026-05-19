@@ -536,7 +536,7 @@ function FilterSidebar({
                 className={cn(
                   "px-2 h-6 text-[11px] rounded border transition-colors",
                   active
-                    ? "bg-accent/15 text-[#93C5FD] border-accent/40"
+                    ? "bg-accent/15 text-accent border-accent/40"
                     : "bg-bg-subtle border-border text-fg-muted hover:text-fg"
                 )}
               >

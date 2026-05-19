@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { cn } from "@/lib/cn";
+import { AppearanceSettings } from "./AppearanceSettings";
 import { ClientTypesManager } from "./ClientTypesManager";
 import { EmailAccountSetup } from "./EmailAccountSetup";
 import { SenderDefaults } from "./SenderDefaults";
 
-type Tab = "accounts" | "defaults" | "clientTypes";
+type Tab = "accounts" | "defaults" | "clientTypes" | "appearance";
 
 export function SettingsView() {
   const [tab, setTab] = useState<Tab>("accounts");
@@ -23,11 +24,18 @@ export function SettingsView() {
         >
           Client types
         </TabBtn>
+        <TabBtn
+          active={tab === "appearance"}
+          onClick={() => setTab("appearance")}
+        >
+          Appearance
+        </TabBtn>
       </aside>
       <div className="flex-1 overflow-y-auto">
         {tab === "accounts" && <EmailAccountSetup />}
         {tab === "defaults" && <SenderDefaults />}
         {tab === "clientTypes" && <ClientTypesManager />}
+        {tab === "appearance" && <AppearanceSettings />}
       </div>
     </div>
   );

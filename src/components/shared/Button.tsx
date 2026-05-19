@@ -15,7 +15,7 @@ const variantClass: Record<Variant, string> = {
   primary:
     "bg-accent text-white hover:bg-accent-hover active:bg-accent-hover disabled:opacity-50",
   secondary:
-    "bg-bg-hover text-fg border border-border hover:bg-[#1c1c20] disabled:opacity-50",
+    "bg-bg-hover text-fg border border-border hover:bg-bg-subtle disabled:opacity-50",
   outline:
     "border border-border text-fg hover:bg-bg-hover disabled:opacity-50",
   ghost:

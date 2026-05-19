@@ -6,6 +6,7 @@ import { useContactStore } from "@/stores/contactStore";
 import { useTemplateStore } from "@/stores/templateStore";
 import { useCampaignStore } from "@/stores/campaignStore";
 import { useClientTypeStore } from "@/stores/clientTypeStore";
+import { useThemeStore } from "@/stores/themeStore";
 import { ToastContainer } from "@/components/shared/Toast";
 import { CommandPalette } from "@/components/shared/CommandPalette";
 import { useUIStore } from "@/stores/uiStore";
@@ -18,6 +19,7 @@ export default function App() {
   const loadTemplates = useTemplateStore((s) => s.load);
   const loadCampaigns = useCampaignStore((s) => s.load);
   const loadClientTypes = useClientTypeStore((s) => s.load);
+  const initThemeListener = useThemeStore((s) => s.initSystemListener);
   const isFirstRun = useSettingsStore((s) => s.isFirstRun);
   const openCommand = useUIStore((s) => s.openCommand);
 
@@ -53,6 +55,9 @@ export default function App() {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [openCommand]);
+
+  // Subscribe to OS dark/light changes so theme="system" stays in sync.
+  useEffect(() => initThemeListener(), [initThemeListener]);
 
   // The scheduler runs in the main process; refresh visible state when it
   // kicks off or finishes a recurring/one-off run so the user sees it.

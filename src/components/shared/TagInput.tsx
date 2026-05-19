@@ -47,7 +47,7 @@ export function TagInput({ value, onChange, placeholder, suggestions = [], class
         {value.map((t) => (
           <span
             key={t}
-            className="inline-flex items-center gap-1 h-6 px-2 text-[11px] font-medium rounded bg-accent/15 text-[#93C5FD] border border-accent/30"
+            className="inline-flex items-center gap-1 h-6 px-2 text-[11px] font-medium rounded bg-accent/15 text-accent border border-accent/30"
           >
             {t}
             <button
