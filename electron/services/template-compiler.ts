@@ -65,15 +65,29 @@ function escapeHtml(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
+// Title-cases a single word — "josh" → "Josh", "MARY" → "Mary".
+// Imported names are often inconsistent (lowercase from a hasty CSV,
+// SHOUTING from a CRM export) so we normalise at merge time rather
+// than trusting whatever's in the DB.
+function titleCase(word: string): string {
+  if (!word) return word;
+  return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+}
+
 export function buildMergeContext(
   contact: ContactWithRelations | null,
   sender: SenderDefaults
 ): MergeContext {
   const name = contact?.name ?? "Friend";
-  const firstName = name.split(/\s+/)[0] ?? name;
+  const firstNameRaw = name.split(/\s+/)[0] ?? name;
+  const firstName = titleCase(firstNameRaw);
+  const displayName = name
+    .split(/\s+/)
+    .map(titleCase)
+    .join(" ");
   return {
     client_name: contact?.client?.name ?? "",
-    contact_name: name,
+    contact_name: displayName,
     contact_first_name: firstName,
     contact_role: contact?.role ?? "",
     staff_list: formatStaffList(contact?.staff ?? []),
@@ -185,8 +199,11 @@ export function renderTemplateForContact(
   const subjectMerge = applyMerge(template.subject, context);
   const bodyMerge = applyMerge(template.body_mjml, context);
 
+  // Wrap the signature in a div with a controlled top margin instead of
+  // <br/><br/> — paragraph collapsing inside mj-text otherwise leaves a
+  // big visual gap before the signature renders.
   const signature = sender.signature_html
-    ? `<br/><br/>${sender.signature_html}`
+    ? `<div style="margin-top:18px;">${sender.signature_html}</div>`
     : "";
   const innerHtml = `${bodyMerge.output}${signature}`;
 
