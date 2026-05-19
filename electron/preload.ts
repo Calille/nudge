@@ -9,7 +9,6 @@ import type {
   ClientType,
   ClientTypeWithUsage,
   ClientWithContacts,
-  ColumnMapping,
   Contact,
   ContactFilters,
   ContactWithRelations,
@@ -19,7 +18,6 @@ import type {
   CreateTemplate,
   EmailAccount,
   FileFilter,
-  ImportResult,
   PaginatedResult,
   RecipientSummary,
   SenderDefaults,
@@ -46,22 +44,6 @@ async function invoke<T>(channel: string, ...args: any[]): Promise<T> {
 
 const api = {
   contacts: {
-    previewSpreadsheet: (filePath: string) =>
-      invoke<{ headers: string[]; rows: Record<string, string>[]; totalRows: number }>(
-        "contacts:preview-spreadsheet",
-        filePath
-      ),
-    importSpreadsheet: (
-      filePath: string,
-      mapping: ColumnMapping,
-      options?: { skipRows?: number[] }
-    ) =>
-      invoke<ImportResult>(
-        "contacts:import-spreadsheet",
-        filePath,
-        mapping,
-        options
-      ),
     getAll: (filters?: ContactFilters) =>
       invoke<PaginatedResult<Contact>>("contacts:list", filters),
     getById: (id: number) =>

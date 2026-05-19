@@ -21,7 +21,7 @@ export function Dashboard() {
   const templates = useTemplateStore((s) => s.templates);
   const campaigns = useCampaignStore((s) => s.campaigns);
   const setActive = useUIStore((s) => s.setActiveView);
-  const openImport = useUIStore((s) => s.setImportWizardOpen);
+  const openImport = useUIStore((s) => s.setImportOpen);
   const openTemplateEditor = useUIStore((s) => s.openTemplateEditor);
   const openCampaignBuilder = useUIStore((s) => s.setCampaignBuilderOpen);
 

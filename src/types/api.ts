@@ -8,7 +8,6 @@ import type {
   ClientType,
   ClientTypeWithUsage,
   ClientWithContacts,
-  ColumnMapping,
   Contact,
   ContactFilters,
   ContactWithRelations,
@@ -18,7 +17,6 @@ import type {
   CreateTemplate,
   EmailAccount,
   FileFilter,
-  ImportResult,
   PaginatedResult,
   RecipientSummary,
   SendProgressEvent,
@@ -31,14 +29,6 @@ import type {
 
 export interface NudgeMailAPI {
   contacts: {
-    importSpreadsheet(
-      filePath: string,
-      mapping: ColumnMapping,
-      options?: { skipRows?: number[] }
-    ): Promise<ImportResult>;
-    previewSpreadsheet(
-      filePath: string
-    ): Promise<{ headers: string[]; rows: Record<string, string>[]; totalRows: number }>;
     getAll(filters?: ContactFilters): Promise<PaginatedResult<Contact>>;
     getById(id: number): Promise<ContactWithRelations>;
     create(

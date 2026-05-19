@@ -40,8 +40,8 @@ interface UIState {
   openCampaignDetail: (id: number) => void;
   closeCampaignDetail: () => void;
 
-  importWizardOpen: boolean;
-  setImportWizardOpen: (open: boolean) => void;
+  importOpen: boolean;
+  setImportOpen: (open: boolean) => void;
 
   campaignBuilderOpen: boolean;
   setCampaignBuilderOpen: (open: boolean) => void;
@@ -86,8 +86,8 @@ export const useUIStore = create<UIState>((set) => ({
   openCampaignDetail: (id) => set({ campaignDetailId: id }),
   closeCampaignDetail: () => set({ campaignDetailId: null }),
 
-  importWizardOpen: false,
-  setImportWizardOpen: (open) => set({ importWizardOpen: open }),
+  importOpen: false,
+  setImportOpen: (open) => set({ importOpen: open }),
 
   campaignBuilderOpen: false,
   setCampaignBuilderOpen: (open) => set({ campaignBuilderOpen: open }),

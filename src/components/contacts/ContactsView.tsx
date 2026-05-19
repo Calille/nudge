@@ -15,8 +15,8 @@ type Tab = "all" | "clients";
 export function ContactsView() {
   const [tab, setTab] = useState<Tab>("all");
   const [newOpen, setNewOpen] = useState(false);
-  const importOpen = useUIStore((s) => s.importWizardOpen);
-  const setImportOpen = useUIStore((s) => s.setImportWizardOpen);
+  const importOpen = useUIStore((s) => s.importOpen);
+  const setImportOpen = useUIStore((s) => s.setImportOpen);
   const detailId = useUIStore((s) => s.contactDetailId);
   const closeDetail = useUIStore((s) => s.closeContactDetail);
   const load = useContactStore((s) => s.load);

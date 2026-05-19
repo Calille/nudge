@@ -8,32 +8,11 @@ import {
   listContacts,
   updateContact,
 } from "../database/queries";
-import { importRows, readSpreadsheet } from "../utils/spreadsheet-parser";
 import { importContactsStrict } from "../utils/strict-import";
 import { registerHandler } from "./helpers";
-import type { ColumnMapping, Contact, ContactFilters } from "../../src/types";
+import type { Contact, ContactFilters } from "../../src/types";
 
 export function registerContactHandlers() {
-  registerHandler(
-    "contacts:preview-spreadsheet",
-    async (_e, filePath: string) => readSpreadsheet(filePath)
-  );
-
-  registerHandler(
-    "contacts:import-spreadsheet",
-    async (
-      _e,
-      filePath: string,
-      mapping: ColumnMapping,
-      options?: { skipRows?: number[] }
-    ) => {
-      const { rows } = readSpreadsheet(filePath);
-      const filename = filePath.split(/[\\/]/).pop() ?? "import.xlsx";
-      const skipRows = new Set<number>(options?.skipRows ?? []);
-      return importRows(filename, rows, mapping, skipRows);
-    }
-  );
-
   registerHandler("contacts:list", async (_e, filters?: ContactFilters) =>
     listContacts(filters ?? {})
   );

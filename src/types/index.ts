@@ -203,14 +203,6 @@ export interface SenderDefaults {
   website: string;
 }
 
-export interface ImportResult {
-  total: number;
-  imported: number;
-  skipped: number;
-  updated: number;
-  errors: Array<{ row: number; message: string }>;
-}
-
 export interface StrictImportRowError {
   row: number;
   reason: string;
@@ -220,16 +212,6 @@ export interface StrictImportResult {
   imported: number;
   skipped: number;
   errors: StrictImportRowError[];
-}
-
-export interface ColumnMapping {
-  client_name?: string;
-  name: string;
-  email: string;
-  role?: string;
-  phone?: string;
-  notes?: string;
-  tags?: string;
 }
 
 export interface ContactFilters {
